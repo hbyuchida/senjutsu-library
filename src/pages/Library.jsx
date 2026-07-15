@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { parseYouTube, parseTimeInput, fmt, loadState, saveState } from "../lib/utils";
-import { INITIAL_PHASES, INITIAL_SYSTEMS, SEED } from "../lib/data";
+import { parseYouTube, parseTimeInput, fmt } from "../lib/utils";
+import { INITIAL_PHASES, INITIAL_SYSTEMS } from "../lib/data";
+import { api } from "../lib/api";
 import { NineMeterArc, Chip, AddChip, AdSlot } from "../components/shared";
 
-function VideoCard({ v, onPlay, onDelete }) {
+function VideoCard({ v, isAdmin, onPlay, onEdit, onDelete }) {
   const thumb = `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`;
   const range =
     v.start || v.end ? `${fmt(v.start || 0)}${v.end ? ` – ${fmt(v.end)}` : " –"}` : "全編";
@@ -24,7 +25,12 @@ function VideoCard({ v, onPlay, onDelete }) {
       <div className="card-body">
         <div className="card-head">
           <h3 className="card-title">{v.title}</h3>
-          <button className="delete-btn" aria-label="削除" onClick={() => onDelete(v.id)}>✕</button>
+          {isAdmin && (
+            <div className="card-admin-actions">
+              <button className="edit-btn" aria-label="編集" onClick={() => onEdit(v)}>✎</button>
+              <button className="delete-btn" aria-label="削除" onClick={() => onDelete(v)}>✕</button>
+            </div>
+          )}
         </div>
         {v.memo && <p className="card-memo">{v.memo}</p>}
         <div className="tag-row">
@@ -70,28 +76,34 @@ function PlayerModal({ v, onClose }) {
   );
 }
 
-function AddForm({ onAdd, onClose, phases, systems, onAddPhase, onAddSystem }) {
-  const [url, setUrl] = useState("");
-  const [title, setTitle] = useState("");
-  const [memo, setMemo] = useState("");
-  const [phase, setPhase] = useState(phases[0]);
-  const [selSystems, setSelSystems] = useState([]);
-  const [tags, setTags] = useState("");
-  const [startStr, setStartStr] = useState("");
-  const [endStr, setEndStr] = useState("");
+// 追加・編集 兼用フォーム
+function VideoForm({ mode, initial, onSubmit, onClose, phases, systems, onAddPhase, onAddSystem }) {
+  const editing = mode === "edit";
+  const [url, setUrl] = useState(
+    initial ? `https://www.youtube.com/watch?v=${initial.videoId}` : ""
+  );
+  const [title, setTitle] = useState(initial?.title || "");
+  const [memo, setMemo] = useState(initial?.memo || "");
+  const [phase, setPhase] = useState(initial?.phase || phases[0]);
+  const [selSystems, setSelSystems] = useState(initial?.systems || []);
+  const [tags, setTags] = useState(initial ? (initial.tags || []).join(", ") : "");
+  const [startStr, setStartStr] = useState(
+    initial && initial.start ? fmt(initial.start) : ""
+  );
+  const [endStr, setEndStr] = useState(initial && initial.end ? fmt(initial.end) : "");
   const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
 
   const parsed = parseYouTube(url);
   const toggleSystem = (s) =>
     setSelSystems((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
 
-  const submit = () => {
+  const submit = async () => {
     if (!parsed) { setErr("YouTubeのURLを確認してください(watch / youtu.be / shorts に対応)"); return; }
     if (!title.trim()) { setErr("タイトルを入力してください"); return; }
     const start = startStr ? parseTimeInput(startStr) : parsed.start || 0;
     const end = endStr ? parseTimeInput(endStr) : null;
-    onAdd({
-      id: Date.now(),
+    const payload = {
       videoId: parsed.videoId,
       title: title.trim(),
       memo: memo.trim(),
@@ -100,14 +112,22 @@ function AddForm({ onAdd, onClose, phases, systems, onAddPhase, onAddSystem }) {
       tags: tags.split(/[,、\s]+/).map((t) => t.trim()).filter(Boolean),
       start: start || 0,
       end,
-    });
-    onClose();
+    };
+    setErr("");
+    setBusy(true);
+    try {
+      await onSubmit(payload);
+      onClose();
+    } catch (e) {
+      setErr(e.message || "保存に失敗しました");
+      setBusy(false);
+    }
   };
 
   return (
     <div className="modal-backdrop top" onClick={onClose}>
       <div className="form-modal" onClick={(e) => e.stopPropagation()}>
-        <h2 className="form-title">動画を追加</h2>
+        <h2 className="form-title">{editing ? "動画を編集" : "動画を追加"}</h2>
 
         <label className="field">
           <span className="field-label">YouTube URL</span>
@@ -176,8 +196,54 @@ function AddForm({ onAdd, onClose, phases, systems, onAddPhase, onAddSystem }) {
         {err && <p className="form-error">{err}</p>}
 
         <div className="form-actions">
-          <button className="cancel-btn" onClick={onClose}>キャンセル</button>
-          <button className="primary-btn" style={{ marginLeft: 0 }} onClick={submit}>ライブラリに追加</button>
+          <button className="cancel-btn" onClick={onClose} disabled={busy}>キャンセル</button>
+          <button className="primary-btn" style={{ marginLeft: 0 }} onClick={submit} disabled={busy}>
+            {busy ? "保存中…" : editing ? "更新する" : "ライブラリに追加"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoginModal({ onLogin, onClose }) {
+  const [pass, setPass] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async () => {
+    if (!pass) { setErr("パスコードを入力してください"); return; }
+    setErr("");
+    setBusy(true);
+    try {
+      await onLogin(pass);
+      onClose();
+    } catch (e) {
+      setErr(e.message || "ログインに失敗しました");
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="modal-backdrop top" onClick={onClose}>
+      <div className="form-modal login-modal" onClick={(e) => e.stopPropagation()}>
+        <h2 className="form-title">管理者ログイン</h2>
+        <p className="login-note">動画の編集・削除には管理者パスコードが必要です。</p>
+        <label className="field">
+          <span className="field-label">パスコード</span>
+          <input
+            type="password"
+            autoFocus
+            value={pass}
+            onChange={(e) => setPass(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+            placeholder="••••••••"
+          />
+        </label>
+        {err && <p className="form-error">{err}</p>}
+        <div className="form-actions">
+          <button className="cancel-btn" onClick={onClose} disabled={busy}>キャンセル</button>
+          <button className="primary-btn" style={{ marginLeft: 0 }} onClick={submit} disabled={busy}>
+            {busy ? "確認中…" : "ログイン"}
+          </button>
         </div>
       </div>
     </div>
@@ -185,10 +251,14 @@ function AddForm({ onAdd, onClose, phases, systems, onAddPhase, onAddSystem }) {
 }
 
 export default function Library() {
-  const [state, setState] = useState(() =>
-    loadState({ videos: SEED, phases: INITIAL_PHASES, systems: INITIAL_SYSTEMS })
-  );
-  const { videos, phases, systems } = state;
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // フォーム用の局面・システム候補(初期値 + 動画から抽出 + セッション中に追加したもの)
+  const [extraPhases, setExtraPhases] = useState([]);
+  const [extraSystems, setExtraSystems] = useState([]);
 
   const [selPhases, setSelPhases] = useState([]);
   const [selSystems, setSelSystems] = useState([]);
@@ -196,19 +266,39 @@ export default function Library() {
   const [query, setQuery] = useState("");
   const [playing, setPlaying] = useState(null);
   const [adding, setAdding] = useState(false);
+  const [editingVideo, setEditingVideo] = useState(null);
+  const [showLogin, setShowLogin] = useState(false);
 
-  // 変更のたびにlocalStorageへ保存
-  useEffect(() => { saveState(state); }, [state]);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [list, admin] = await Promise.all([api.listVideos(), api.session().catch(() => false)]);
+        if (!alive) return;
+        setVideos(list);
+        setIsAdmin(admin);
+      } catch (e) {
+        if (alive) setLoadError(e.message || "読み込みに失敗しました");
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => { alive = false; };
+  }, []);
 
-  const setVideos = (fn) => setState((prev) => ({ ...prev, videos: typeof fn === "function" ? fn(prev.videos) : fn }));
-  const addPhase = (v) => setState((prev) => (prev.phases.includes(v) ? prev : { ...prev, phases: [...prev.phases, v] }));
-  const addSystem = (v) => setState((prev) => (prev.systems.includes(v) ? prev : { ...prev, systems: [...prev.systems, v] }));
+  const uniq = (arr) => [...new Set(arr)];
+  const phases = useMemo(
+    () => uniq([...INITIAL_PHASES, ...videos.map((v) => v.phase).filter(Boolean), ...extraPhases]),
+    [videos, extraPhases]
+  );
+  const systems = useMemo(
+    () => uniq([...INITIAL_SYSTEMS, ...videos.flatMap((v) => v.systems), ...extraSystems]),
+    [videos, extraSystems]
+  );
+  const allTags = useMemo(() => uniq(videos.flatMap((v) => v.tags)), [videos]);
 
-  const allTags = useMemo(() => {
-    const s = new Set();
-    videos.forEach((v) => v.tags.forEach((t) => s.add(t)));
-    return [...s];
-  }, [videos]);
+  const addPhase = (v) => setExtraPhases((prev) => (prev.includes(v) ? prev : [...prev, v]));
+  const addSystem = (v) => setExtraSystems((prev) => (prev.includes(v) ? prev : [...prev, v]));
 
   const toggle = (setter) => (val) =>
     setter((prev) => (prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]));
@@ -224,6 +314,33 @@ export default function Library() {
   const clearAll = () => { setSelPhases([]); setSelSystems([]); setSelTags([]); setQuery(""); };
   const filterActive = selPhases.length || selSystems.length || selTags.length || query;
 
+  // ---- 操作ハンドラ ----
+  const handleAdd = async (payload) => {
+    const v = await api.addVideo(payload);
+    setVideos((prev) => [v, ...prev]);
+  };
+  const handleUpdate = async (payload) => {
+    const v = await api.updateVideo(editingVideo.id, payload);
+    setVideos((prev) => prev.map((x) => (x.id === v.id ? v : x)));
+  };
+  const handleDelete = async (video) => {
+    if (!window.confirm(`「${video.title}」を削除しますか?この操作は取り消せません。`)) return;
+    try {
+      await api.deleteVideo(video.id);
+      setVideos((prev) => prev.filter((x) => x.id !== video.id));
+    } catch (e) {
+      alert(e.message || "削除に失敗しました");
+    }
+  };
+  const handleLogin = async (passcode) => {
+    await api.login(passcode);
+    setIsAdmin(true);
+  };
+  const handleLogout = async () => {
+    await api.logout().catch(() => {});
+    setIsAdmin(false);
+  };
+
   const gridItems = [];
   filtered.forEach((v, i) => {
     gridItems.push({ type: "video", v, key: `v-${v.id}` });
@@ -232,6 +349,17 @@ export default function Library() {
 
   return (
     <>
+      <div className="admin-bar container">
+        {isAdmin ? (
+          <>
+            <span className="admin-badge">● 管理者モード</span>
+            <button className="admin-link" onClick={handleLogout}>ログアウト</button>
+          </>
+        ) : (
+          <button className="admin-link" onClick={() => setShowLogin(true)}>管理者ログイン</button>
+        )}
+      </div>
+
       <header className="site-header">
         <div className="arc"><NineMeterArc width={340} /></div>
         <p className="eyebrow">HANDBALL TACTICS LIBRARY</p>
@@ -247,14 +375,12 @@ export default function Library() {
           {phases.map((p) => (
             <Chip key={p} label={p} active={selPhases.includes(p)} onClick={() => toggle(setSelPhases)(p)} tone="orange" />
           ))}
-          <AddChip onAdd={addPhase} placeholder="新しい局面" />
         </div>
         <div className="filter-row">
           <span className="filter-label">システム</span>
           {systems.map((s) => (
             <Chip key={s} label={s} active={selSystems.includes(s)} onClick={() => toggle(setSelSystems)(s)} />
           ))}
-          <AddChip onAdd={addSystem} placeholder="新しいシステム" />
         </div>
         {allTags.length > 0 && (
           <div className="filter-row">
@@ -279,27 +405,43 @@ export default function Library() {
       <div className="container"><div className="court-line" /></div>
 
       <main className="container main-area">
-        <p className="count-label">{filtered.length} / {videos.length} 本</p>
-        {filtered.length === 0 ? (
+        {loading ? (
           <div className="empty-state">
             <NineMeterArc width={180} color="rgba(242,238,230,0.25)" />
-            <p>該当する動画がありません。絞り込みを解除するか、「＋ 動画を追加」から登録できます。</p>
+            <p>読み込み中…</p>
+          </div>
+        ) : loadError ? (
+          <div className="empty-state">
+            <NineMeterArc width={180} color="rgba(242,238,230,0.25)" />
+            <p>読み込みに失敗しました: {loadError}</p>
           </div>
         ) : (
-          <div className="grid">
-            {gridItems.map((item) =>
-              item.type === "video" ? (
-                <VideoCard
-                  key={item.key}
-                  v={item.v}
-                  onPlay={setPlaying}
-                  onDelete={(id) => setVideos((prev) => prev.filter((x) => x.id !== id))}
-                />
-              ) : (
-                <AdSlot key={item.key} variant="card" />
-              )
+          <>
+            <p className="count-label">{filtered.length} / {videos.length} 本</p>
+            {filtered.length === 0 ? (
+              <div className="empty-state">
+                <NineMeterArc width={180} color="rgba(242,238,230,0.25)" />
+                <p>該当する動画がありません。絞り込みを解除するか、「＋ 動画を追加」から登録できます。</p>
+              </div>
+            ) : (
+              <div className="grid">
+                {gridItems.map((item) =>
+                  item.type === "video" ? (
+                    <VideoCard
+                      key={item.key}
+                      v={item.v}
+                      isAdmin={isAdmin}
+                      onPlay={setPlaying}
+                      onEdit={setEditingVideo}
+                      onDelete={handleDelete}
+                    />
+                  ) : (
+                    <AdSlot key={item.key} variant="card" />
+                  )
+                )}
+              </div>
             )}
-          </div>
+          </>
         )}
       </main>
 
@@ -310,14 +452,15 @@ export default function Library() {
           <Link to="/privacy">プライバシーポリシー</Link>
         </nav>
         <p className="footer-note">
-          ※ 登録した動画はお使いのブラウザ内(localStorage)に保存されます。別の端末・ブラウザには引き継がれません。
+          ※ 登録した動画は全員で共有されます。追加はどなたでも可能で、編集・削除は管理者のみが行えます。
         </p>
       </footer>
 
       {playing && <PlayerModal v={playing} onClose={() => setPlaying(null)} />}
       {adding && (
-        <AddForm
-          onAdd={(v) => setVideos((prev) => [v, ...prev])}
+        <VideoForm
+          mode="add"
+          onSubmit={handleAdd}
           onClose={() => setAdding(false)}
           phases={phases}
           systems={systems}
@@ -325,6 +468,19 @@ export default function Library() {
           onAddSystem={addSystem}
         />
       )}
+      {editingVideo && (
+        <VideoForm
+          mode="edit"
+          initial={editingVideo}
+          onSubmit={handleUpdate}
+          onClose={() => setEditingVideo(null)}
+          phases={phases}
+          systems={systems}
+          onAddPhase={addPhase}
+          onAddSystem={addSystem}
+        />
+      )}
+      {showLogin && <LoginModal onLogin={handleLogin} onClose={() => setShowLogin(false)} />}
     </>
   );
 }

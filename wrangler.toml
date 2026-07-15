@@ -1,0 +1,11 @@
+# Cloudflare Pages 設定 (D1バインド + Functions)
+# 秘密(ADMIN_PASSCODE / SESSION_SECRET)はここには書かず、
+# `wrangler pages secret put` かダッシュボードで設定する。
+name = "senjutsu-library"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-07-15"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "senjutsu-library-db"
+database_id = "4da5e013-0183-453d-8aef-95c686d14bbe"

@@ -100,8 +100,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .card-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .card-title { font-weight: 700; line-height: 1.4; font-size: 1rem; }
-.delete-btn { font-size: 0.75rem; flex-shrink: 0; opacity: 0.5; color: var(--line-dim); }
-.delete-btn:hover { opacity: 1; }
+.card-admin-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.delete-btn, .edit-btn { font-size: 0.8rem; flex-shrink: 0; opacity: 0.55; color: var(--line-dim); line-height: 1; }
+.delete-btn:hover, .edit-btn:hover { opacity: 1; }
+.edit-btn:hover { color: var(--goal-orange); }
 .card-memo { font-size: 0.875rem; line-height: 1.6; color: var(--line-dim); }
 .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: auto; padding-top: 4px; align-items: center; }
 .tag-phase { border-radius: 9999px; padding: 2px 8px; font-size: 0.75rem; font-weight: 700; background: var(--goal-orange); color: #fff; }
@@ -139,6 +141,18 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .form-error { font-size: 0.875rem; font-weight: 700; color: var(--goal-orange); }
 .form-actions { display: flex; gap: 12px; justify-content: flex-end; }
 .cancel-btn { border-radius: 9999px; padding: 8px 16px; font-size: 0.875rem; color: var(--line-dim); }
+.primary-btn:disabled, .cancel-btn:disabled { opacity: 0.5; cursor: default; }
+.login-modal { max-width: 420px; }
+.login-note { font-size: 0.875rem; color: var(--line-dim); line-height: 1.6; }
+
+/* ===== 管理者バー ===== */
+.admin-bar { display: flex; justify-content: flex-end; align-items: center; gap: 12px; padding-top: 12px; padding-bottom: 0; min-height: 20px; }
+.admin-link {
+  font-size: 0.8rem; color: var(--line-dim); letter-spacing: 0.05em;
+  border: 1px solid rgba(242, 238, 230, 0.25); border-radius: 9999px; padding: 4px 14px;
+}
+.admin-link:hover { color: var(--line); border-color: var(--line-dim); }
+.admin-badge { font-size: 0.8rem; font-weight: 700; color: var(--goal-orange); letter-spacing: 0.05em; }
 
 /* ===== 広告 ===== */
 .ad-slot {
