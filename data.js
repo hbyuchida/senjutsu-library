@@ -1,0 +1,53 @@
+export const INITIAL_PHASES = ["セットオフェンス", "セットディフェンス", "速攻", "戻りの守備", "GK・その他"];
+export const INITIAL_SYSTEMS = ["6:0 DF", "5:1 DF", "3:2:1 DF", "マンツーマン", "2ライン攻撃", "サイド展開", "ポストプレー"];
+
+export const SEED = [
+  {
+    id: 1,
+    videoId: "ag0pVsZ5meI",
+    title: "世界基準の戦術をガチ解説",
+    memo: "EURO2024の試合展開をもとにした合理的なセット攻撃の解説。",
+    phase: "セットオフェンス",
+    systems: ["2ライン攻撃"],
+    tags: ["解説", "世界基準"],
+    start: 0,
+    end: null,
+    sample: true,
+  },
+  {
+    id: 2,
+    videoId: "FgNTPbxyw0s",
+    title: "ユーゴの\u201cきっかけ\u201dを使った組織的な攻め",
+    memo: "3:44から本題。きっかけ作りからの連動を確認する。",
+    phase: "セットオフェンス",
+    systems: ["ポストプレー"],
+    tags: ["ユーゴ", "組織攻撃"],
+    start: 224,
+    end: null,
+    sample: true,
+  },
+  {
+    id: 3,
+    videoId: "XCSrj0bmciM",
+    title: "サイドをフル活用した戦術分析(バルサ)",
+    memo: "サイドの幅を使った崩し。U-12にも落とし込みやすい考え方。",
+    phase: "セットオフェンス",
+    systems: ["サイド展開"],
+    tags: ["バルサ", "戦術分析"],
+    start: 0,
+    end: null,
+    sample: true,
+  },
+  {
+    id: 4,
+    videoId: "ZkB-CAeWEhQ",
+    title: "大流行中の戦術を分析(バルサ)",
+    memo: "流行戦術の仕組みと対策のヒント。",
+    phase: "セットオフェンス",
+    systems: ["2ライン攻撃"],
+    tags: ["バルサ", "戦術分析"],
+    start: 0,
+    end: null,
+    sample: true,
+  },
+];
