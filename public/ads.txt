@@ -1,2 +1,1 @@
-# AdSense審査通過後、AdSense管理画面に表示される1行をここに貼る
-# 例: google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0
+google.com, pub-7054580763658374, DIRECT, f08c47fec0942fa0
