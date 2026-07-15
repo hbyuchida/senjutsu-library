@@ -65,7 +65,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .filters { display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
 .filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .filter-label { width: 64px; flex-shrink: 0; font-family: "Barlow Condensed", sans-serif; letter-spacing: 0.15em; font-size: 0.75rem; color: var(--line-dim); }
-.filter-actions { display: flex; align-items: center; gap: 12px; padding-top: 4px; }
+.filter-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 4px; }
 .search-input {
   border-radius: 9999px; padding: 8px 16px; font-size: 0.875rem; flex: 1; max-width: 320px;
   background: var(--court-blue-soft); border: 1px solid rgba(242, 238, 230, 0.2); color: var(--line);
@@ -74,6 +74,15 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .primary-btn {
   margin-left: auto; border-radius: 9999px; padding: 8px 20px; font-size: 0.875rem;
   font-weight: 700; background: var(--goal-orange); color: #fff;
+}
+
+/* スマホ: 検索窓と「動画を追加」を縦積みにして押しやすく */
+@media (max-width: 639px) {
+  .filter-actions { flex-direction: column; align-items: stretch; gap: 10px; }
+  .search-input { max-width: none; width: 100%; }
+  .clear-btn { align-self: flex-start; }
+  .primary-btn { margin-left: 0; width: 100%; text-align: center; padding: 12px 20px; }
+  .filter-label { width: 100%; margin-bottom: -2px; }
 }
 
 .court-line { border-top: 2px solid rgba(242, 238, 230, 0.2); }
