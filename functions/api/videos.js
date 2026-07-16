@@ -1,6 +1,6 @@
 // GET  /api/videos  … 一覧(公開・全訪問者が同じ共有データ)
 // POST /api/videos  … 追加(公開・誰でも投稿できる)
-import { json, rowToVideo, validateVideoInput } from "./_util.js";
+import { json, rowToVideo, validateVideoInput, upsertTaxonomy } from "./_util.js";
 
 export async function onRequestGet({ env }) {
   const { results } = await env.DB
@@ -26,6 +26,13 @@ export async function onRequestPost({ env, request }) {
     )
     .bind(value.videoId, value.title, value.memo, value.phase, value.systems, value.tags, value.start, value.end, now)
     .run();
+
+  // 新しい局面・システム・タグを分類マスタにも登録(一覧を完全に保つ)
+  await upsertTaxonomy(env, {
+    phase: value.phase,
+    systems: JSON.parse(value.systems),
+    tags: JSON.parse(value.tags),
+  });
 
   const row = await env.DB.prepare("SELECT * FROM videos WHERE id=?").bind(res.meta.last_row_id).first();
   return json({ video: rowToVideo(row) }, 201);

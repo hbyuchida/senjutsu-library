@@ -1,6 +1,6 @@
 // PUT    /api/videos/:id … 編集(管理者のみ)
 // DELETE /api/videos/:id … 削除(管理者のみ)
-import { json, rowToVideo, validateVideoInput } from "../_util.js";
+import { json, rowToVideo, validateVideoInput, upsertTaxonomy } from "../_util.js";
 import { isAdmin } from "../_auth.js";
 
 export async function onRequestPut(context) {
@@ -28,6 +28,12 @@ export async function onRequestPut(context) {
     )
     .bind(value.videoId, value.title, value.memo, value.phase, value.systems, value.tags, value.start, value.end, id)
     .run();
+
+  await upsertTaxonomy(env, {
+    phase: value.phase,
+    systems: JSON.parse(value.systems),
+    tags: JSON.parse(value.tags),
+  });
 
   const row = await env.DB.prepare("SELECT * FROM videos WHERE id=?").bind(id).first();
   return json({ video: rowToVideo(row) });

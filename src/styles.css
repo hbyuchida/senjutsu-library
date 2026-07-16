@@ -163,6 +163,25 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .admin-link:hover { color: var(--line); border-color: var(--line-dim); }
 .admin-badge { font-size: 0.8rem; font-weight: 700; color: var(--goal-orange); letter-spacing: 0.05em; }
 
+/* ===== タグ管理 ===== */
+.tagmgr-modal { max-width: 560px; }
+.tagmgr-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tagmgr-section { display: flex; flex-direction: column; gap: 10px; padding-top: 4px; border-top: 1px solid rgba(242, 238, 230, 0.12); }
+.tagmgr-sec-label { font-size: 0.95rem; font-weight: 700; color: var(--line); }
+.tagmgr-items { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tagmgr-empty { font-size: 0.8rem; color: var(--line-faint); }
+.tagmgr-chip { display: inline-flex; align-items: center; gap: 6px; cursor: default; }
+.tagmgr-chip.active, .tagmgr-chip:hover { background: transparent; }
+.tagmgr-name { line-height: 1; }
+.tagmgr-edit, .tagmgr-del { font-size: 0.8rem; line-height: 1; opacity: 0.55; color: inherit; }
+.tagmgr-edit:hover { opacity: 1; color: var(--goal-orange); }
+.tagmgr-del:hover { opacity: 1; }
+.tagmgr-row.tagmgr-editing { display: inline-flex; align-items: center; gap: 4px; }
+.tagmgr-x { font-size: 0.9rem; color: var(--line-dim); padding: 0 4px; }
+.tagmgr-err { font-size: 0.75rem; color: var(--goal-orange); }
+.tagmgr-add { display: flex; align-items: center; gap: 8px; }
+.tagmgr-add .chip-input { flex: 1; max-width: 240px; }
+
 /* ===== 広告 ===== */
 .ad-slot {
   border: 1.5px dashed rgba(242, 238, 230, 0.3);

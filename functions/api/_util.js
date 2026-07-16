@@ -31,6 +31,18 @@ export function rowToVideo(r) {
   };
 }
 
+// 動画の分類(局面・システム・タグ)を分類マスタ(taxonomy)へ追記する。
+// 既存はUNIQUE制約で無視されるため、一覧が常に完全な状態に保たれる。
+export async function upsertTaxonomy(env, { phase, systems, tags }) {
+  const q = (kind, name) =>
+    env.DB.prepare("INSERT OR IGNORE INTO taxonomy (kind,name) VALUES (?,?)").bind(kind, name);
+  const stmts = [];
+  if (phase) stmts.push(q("phase", phase));
+  for (const s of systems || []) if (s) stmts.push(q("system", s));
+  for (const t of tags || []) if (t) stmts.push(q("tag", t));
+  if (stmts.length) await env.DB.batch(stmts);
+}
+
 // 追加/編集の入力を検証して正規化。問題があれば {error} を返す。
 export function validateVideoInput(b) {
   const videoId = (b.videoId || "").toString().trim();

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { parseYouTube, parseTimeInput, fmt } from "../lib/utils";
-import { INITIAL_PHASES, INITIAL_SYSTEMS } from "../lib/data";
 import { api } from "../lib/api";
 import { NineMeterArc, Chip, AddChip, AdSlot } from "../components/shared";
 
@@ -250,13 +249,120 @@ function LoginModal({ onLogin, onClose }) {
   );
 }
 
+// ===== タグ管理(管理者) =====
+function TagRow({ kind, name, tone, onRename, onDelete }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(name);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const commit = async () => {
+    const nv = val.trim();
+    if (!nv || nv === name) { setEditing(false); setVal(name); return; }
+    setBusy(true); setErr("");
+    try { await onRename(kind, name, nv); setEditing(false); }
+    catch (e) { setErr(e.message || "変更に失敗しました"); setBusy(false); }
+  };
+  const del = async () => {
+    if (!window.confirm(`「${name}」を削除しますか?この分類は全ての動画から取り除かれます。`)) return;
+    setBusy(true); setErr("");
+    try { await onDelete(kind, name); }
+    catch (e) { setErr(e.message || "削除に失敗しました"); setBusy(false); }
+  };
+
+  if (editing) {
+    return (
+      <span className="tagmgr-row tagmgr-editing">
+        <input
+          autoFocus className="chip-input" value={val} disabled={busy}
+          onChange={(e) => setVal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") { setEditing(false); setVal(name); }
+          }}
+        />
+        <button className="chip-confirm" onClick={commit} disabled={busy}>✓</button>
+        <button className="tagmgr-x" onClick={() => { setEditing(false); setVal(name); }} disabled={busy}>×</button>
+        {err && <span className="tagmgr-err">{err}</span>}
+      </span>
+    );
+  }
+  return (
+    <span className={`chip tagmgr-chip ${tone === "orange" ? "orange" : ""}`}>
+      <span className="tagmgr-name">{name}</span>
+      <button className="tagmgr-edit" aria-label="名称変更" onClick={() => setEditing(true)} disabled={busy}>✎</button>
+      <button className="tagmgr-del" aria-label="削除" onClick={del} disabled={busy}>✕</button>
+    </span>
+  );
+}
+
+function TagSection({ kind, label, items, tone, onAdd, onRename, onDelete }) {
+  const [newVal, setNewVal] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const add = async () => {
+    const v = newVal.trim();
+    if (!v) return;
+    setBusy(true); setErr("");
+    try { await onAdd(kind, v); setNewVal(""); }
+    catch (e) { setErr(e.message || "追加に失敗しました"); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="tagmgr-section">
+      <h3 className="tagmgr-sec-label">{label}</h3>
+      <div className="tagmgr-items">
+        {items.length === 0 && <span className="tagmgr-empty">なし</span>}
+        {items.map((name) => (
+          <TagRow key={name} kind={kind} name={name} tone={tone} onRename={onRename} onDelete={onDelete} />
+        ))}
+      </div>
+      <div className="tagmgr-add">
+        <input
+          className="chip-input" value={newVal} disabled={busy}
+          placeholder={`${label}を追加`}
+          onChange={(e) => setNewVal(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") add(); }}
+        />
+        <button className="chip-confirm" onClick={add} disabled={busy}>＋ 追加</button>
+      </div>
+      {err && <p className="form-error">{err}</p>}
+    </div>
+  );
+}
+
+function TagManager({ taxonomy, onAdd, onRename, onDelete, onClose }) {
+  return (
+    <div className="modal-backdrop top" onClick={onClose}>
+      <div className="form-modal tagmgr-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="tagmgr-head">
+          <h2 className="form-title">タグ管理</h2>
+          <button className="cancel-btn" onClick={onClose}>閉じる</button>
+        </div>
+        <p className="login-note">
+          局面・システム・タグの追加・名称変更(✎)・削除(✕)ができます。
+          名称変更と削除は、その分類を持つ全ての動画にも反映されます。
+        </p>
+        <TagSection kind="phase" label="局面" items={taxonomy.phases} tone="orange"
+          onAdd={onAdd} onRename={onRename} onDelete={onDelete} />
+        <TagSection kind="system" label="システム" items={taxonomy.systems}
+          onAdd={onAdd} onRename={onRename} onDelete={onDelete} />
+        <TagSection kind="tag" label="タグ" items={taxonomy.tags}
+          onAdd={onAdd} onRename={onRename} onDelete={onDelete} />
+      </div>
+    </div>
+  );
+}
+
 export default function Library() {
   const [videos, setVideos] = useState([]);
+  const [taxo, setTaxo] = useState({ phases: [], systems: [], tags: [] });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showTagMgr, setShowTagMgr] = useState(false);
 
-  // フォーム用の局面・システム候補(初期値 + 動画から抽出 + セッション中に追加したもの)
+  // フォーム用の局面・システム候補(セッション中に追加したものを即時表示するため)
   const [extraPhases, setExtraPhases] = useState([]);
   const [extraSystems, setExtraSystems] = useState([]);
 
@@ -273,9 +379,14 @@ export default function Library() {
     let alive = true;
     (async () => {
       try {
-        const [list, admin] = await Promise.all([api.listVideos(), api.session().catch(() => false)]);
+        const [list, tx, admin] = await Promise.all([
+          api.listVideos(),
+          api.taxonomy().catch(() => ({ phases: [], systems: [], tags: [] })),
+          api.session().catch(() => false),
+        ]);
         if (!alive) return;
         setVideos(list);
+        setTaxo(tx);
         setIsAdmin(admin);
       } catch (e) {
         if (alive) setLoadError(e.message || "読み込みに失敗しました");
@@ -286,16 +397,27 @@ export default function Library() {
     return () => { alive = false; };
   }, []);
 
+  // 分類マスタ + 動画を再取得(タグ管理の変更後などに使う)
+  const refreshData = async () => {
+    const [list, tx] = await Promise.all([api.listVideos(), api.taxonomy()]);
+    setVideos(list);
+    setTaxo(tx);
+  };
+
   const uniq = (arr) => [...new Set(arr)];
+  // チップはマスタ(taxonomy)を源泉にしつつ、動画に存在する値も念のため統合
   const phases = useMemo(
-    () => uniq([...INITIAL_PHASES, ...videos.map((v) => v.phase).filter(Boolean), ...extraPhases]),
-    [videos, extraPhases]
+    () => uniq([...taxo.phases, ...videos.map((v) => v.phase).filter(Boolean), ...extraPhases]),
+    [taxo, videos, extraPhases]
   );
   const systems = useMemo(
-    () => uniq([...INITIAL_SYSTEMS, ...videos.flatMap((v) => v.systems), ...extraSystems]),
-    [videos, extraSystems]
+    () => uniq([...taxo.systems, ...videos.flatMap((v) => v.systems), ...extraSystems]),
+    [taxo, videos, extraSystems]
   );
-  const allTags = useMemo(() => uniq(videos.flatMap((v) => v.tags)), [videos]);
+  const allTags = useMemo(
+    () => uniq([...taxo.tags, ...videos.flatMap((v) => v.tags)]),
+    [taxo, videos]
+  );
 
   const addPhase = (v) => setExtraPhases((prev) => (prev.includes(v) ? prev : [...prev, v]));
   const addSystem = (v) => setExtraSystems((prev) => (prev.includes(v) ? prev : [...prev, v]));
@@ -341,6 +463,18 @@ export default function Library() {
     setIsAdmin(false);
   };
 
+  // タグ管理(管理者)。変更後はマスタと動画を再取得して画面に反映
+  const handleAddTaxo = async (kind, name) => { await api.addTaxonomy(kind, name); await refreshData(); };
+  const handleRenameTaxo = async (kind, oldName, newName) => { await api.renameTaxonomy(kind, oldName, newName); await refreshData(); };
+  const handleDeleteTaxo = async (kind, name) => {
+    await api.deleteTaxonomy(kind, name);
+    // 削除された分類が絞り込みに残らないよう解除
+    setSelPhases((p) => p.filter((x) => x !== name));
+    setSelSystems((p) => p.filter((x) => x !== name));
+    setSelTags((p) => p.filter((x) => x !== name));
+    await refreshData();
+  };
+
   const gridItems = [];
   filtered.forEach((v, i) => {
     gridItems.push({ type: "video", v, key: `v-${v.id}` });
@@ -353,6 +487,7 @@ export default function Library() {
         {isAdmin ? (
           <>
             <span className="admin-badge">● 管理者モード</span>
+            <button className="admin-link" onClick={() => setShowTagMgr(true)}>タグ管理</button>
             <button className="admin-link" onClick={handleLogout}>ログアウト</button>
           </>
         ) : (
@@ -481,6 +616,15 @@ export default function Library() {
         />
       )}
       {showLogin && <LoginModal onLogin={handleLogin} onClose={() => setShowLogin(false)} />}
+      {showTagMgr && (
+        <TagManager
+          taxonomy={{ phases, systems, tags: allTags }}
+          onAdd={handleAddTaxo}
+          onRename={handleRenameTaxo}
+          onDelete={handleDeleteTaxo}
+          onClose={() => setShowTagMgr(false)}
+        />
+      )}
     </>
   );
 }

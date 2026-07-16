@@ -29,4 +29,13 @@ export const api = {
   session: () => req("/api/session").then((d) => d.admin),
   login: (passcode) => req("/api/login", { method: "POST", body: JSON.stringify({ passcode }) }),
   logout: () => req("/api/logout", { method: "POST" }),
+
+  // 分類マスタ(局面・システム・タグ)
+  taxonomy: () => req("/api/taxonomy"),
+  addTaxonomy: (kind, name) =>
+    req("/api/taxonomy", { method: "POST", body: JSON.stringify({ kind, name }) }),
+  renameTaxonomy: (kind, oldName, newName) =>
+    req("/api/taxonomy", { method: "PUT", body: JSON.stringify({ kind, oldName, newName }) }),
+  deleteTaxonomy: (kind, name) =>
+    req("/api/taxonomy", { method: "DELETE", body: JSON.stringify({ kind, name }) }),
 };
