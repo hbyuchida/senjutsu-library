@@ -13,16 +13,7 @@ const qualifies = (v) => {
   return len != null && len > 0 && len <= MAX_SEC;
 };
 
-// 再生順(順番 / ランダム)の保存先。次回訪問時も選択を引き継ぐ。
-const ORDER_KEY = "senjutsu-shorts-shuffle";
-const loadShufflePref = () => {
-  try {
-    return localStorage.getItem(ORDER_KEY) === "1";
-  } catch {
-    return false;
-  }
-};
-
+// 再生順は常にランダム。訪問(リロード)ごとに並びが変わる。
 // Fisher-Yates で並びをシャッフル(元配列は壊さない)
 function shuffled(list) {
   const a = [...list];
@@ -55,9 +46,7 @@ function loadYT() {
 }
 
 export default function Shorts() {
-  const [source, setSource] = useState([]); // 取得したままの順序(元データ)
-  const [videos, setVideos] = useState([]); // 実際に表示する順序(順番 or ランダム)
-  const [shuffle, setShuffle] = useState(loadShufflePref);
+  const [videos, setVideos] = useState([]); // 表示順(常にランダム)
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -84,10 +73,8 @@ export default function Shorts() {
       try {
         const list = await api.listVideos();
         if (!alive) return;
-        const target = list.filter(qualifies);
-        setSource(target);
-        // ランダム選択中なら初回表示から並びをシャッフルする
-        setVideos(shuffle ? shuffled(target) : target);
+        // 常にランダム順で表示する
+        setVideos(shuffled(list.filter(qualifies)));
       } catch (e) {
         if (alive) setLoadError(e.message || "読み込みに失敗しました");
       } finally {
@@ -224,20 +211,7 @@ export default function Shorts() {
     });
   };
 
-  // 再生順の切替(順番 ⇔ ランダム)。切替時は先頭から見直せるよう一番上に戻す。
-  const toggleShuffle = () => {
-    const next = !shuffle;
-    setShuffle(next);
-    try {
-      localStorage.setItem(ORDER_KEY, next ? "1" : "0");
-    } catch {
-      /* プライベートモードなど。保存できなくても動作は継続 */
-    }
-    setVideos(next ? shuffled(source) : source);
-    setActiveIndex(0);
-  };
-
-  // 並び順が変わったら先頭へ。再描画でスライドが並び替わった「後」に戻さないと、
+  // 一覧が入れ替わったら先頭へ。再描画でスライドが並び替わった「後」に戻さないと、
   // ブラウザのスクロール位置復元に打ち消されて表示と再生中の動画がズレる。
   useLayoutEffect(() => {
     const root = containerRef.current;
@@ -293,13 +267,6 @@ export default function Shorts() {
             <span className="shorts-count">
               {activeIndex + 1} / {videos.length}
             </span>
-            <button
-              className={`shorts-mute ${shuffle ? "on" : ""}`}
-              onClick={toggleShuffle}
-              aria-label={shuffle ? "順番に再生する" : "ランダムに再生する"}
-            >
-              {shuffle ? "🔀 ランダム" : "🔢 順番"}
-            </button>
             <button className="shorts-mute" onClick={toggleMute} aria-label={muted ? "音を出す" : "ミュート"}>
               {muted ? "🔇 ミュート中" : "🔊 音あり"}
             </button>
