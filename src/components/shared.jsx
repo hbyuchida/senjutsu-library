@@ -1,4 +1,19 @@
 import { useState } from "react";
+import { NavLink } from "react-router-dom";
+
+// ライブラリ / ショート(自動再生)を切り替えるタブ
+export function TabNav() {
+  return (
+    <nav className="tab-nav">
+      <NavLink to="/" end className={({ isActive }) => `tab-link ${isActive ? "active" : ""}`}>
+        ライブラリ
+      </NavLink>
+      <NavLink to="/shorts" className={({ isActive }) => `tab-link ${isActive ? "active" : ""}`}>
+        ショート ▶
+      </NavLink>
+    </nav>
+  );
+}
 
 // 9mライン(破線アーク)モチーフ
 export function NineMeterArc({ width = 220, color = "rgba(242,238,230,0.55)" }) {

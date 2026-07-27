@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { parseYouTube, parseTimeInput, fmt } from "../lib/utils";
 import { api } from "../lib/api";
-import { NineMeterArc, Chip, AddChip, AdSlot } from "../components/shared";
+import { NineMeterArc, Chip, AddChip, AdSlot, TabNav } from "../components/shared";
 
 function VideoCard({ v, isAdmin, onPlay, onEdit, onDelete }) {
   const thumb = `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`;
@@ -494,6 +494,8 @@ export default function Library() {
           <button className="admin-link" onClick={() => setShowLogin(true)}>管理者ログイン</button>
         )}
       </div>
+
+      <div className="container"><TabNav /></div>
 
       <header className="site-header">
         <div className="arc"><NineMeterArc width={340} /></div>

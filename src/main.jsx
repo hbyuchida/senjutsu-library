@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Library from "./pages/Library";
+import Shorts from "./pages/Shorts";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import "./styles.css";
@@ -11,6 +12,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Library />} />
+        <Route path="/shorts" element={<Shorts />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/about" element={<About />} />
       </Routes>
