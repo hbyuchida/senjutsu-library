@@ -40,7 +40,9 @@ export default function Shorts() {
   const [loadError, setLoadError] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [muted, setMuted] = useState(true);
+  const [isFull, setIsFull] = useState(false);
 
+  const pageRef = useRef(null); // 全画面にする対象(YouTubeのiframeではなくページ側)
   const containerRef = useRef(null);
   const slideRefs = useRef([]);
   const mountRef = useRef(null); // アクティブスライド内のプレーヤー設置場所
@@ -142,6 +144,10 @@ export default function Shorts() {
           start: v.start || 0,
           end: v.end,
           mute: 1, // 自動再生を確実にするため常にミュートで開始
+          // YouTube側の全画面はiframeだけを全画面にしてしまい、
+          // 動画切替(プレーヤー再生成)で解除され自動送りが途切れる。
+          // 代わりに上部の「⤢ 全画面」(ページごと全画面)を使う。
+          fs: 0,
         },
         events: {
           onReady: (e) => {
@@ -193,6 +199,36 @@ export default function Shorts() {
     });
   };
 
+  // 全画面切替。YouTubeのiframeではなくページ側を全画面にするため、
+  // 全画面のまま次の動画へ自動送りでき、タイトルなどの情報も出したままにできる。
+  const toggleFullscreen = async () => {
+    const el = pageRef.current;
+    if (!el) return;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if (el.requestFullscreen) {
+        await el.requestFullscreen();
+      } else if (el.webkitRequestFullscreen) {
+        // iOS Safari など
+        el.webkitRequestFullscreen();
+      }
+    } catch {
+      /* ユーザー操作以外からの要求は拒否される */
+    }
+  };
+
+  // 全画面状態を監視(Escキーやブラウザ操作での解除にも追従)
+  useEffect(() => {
+    const onFsChange = () => setIsFull(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
+    };
+  }, []);
+
   // キーボードで上下送り
   useEffect(() => {
     const onKey = (e) => {
@@ -204,9 +240,9 @@ export default function Shorts() {
   }, [goTo]);
 
   return (
-    <div className="shorts-page">
+    <div className={`shorts-page ${isFull ? "is-full" : ""}`} ref={pageRef}>
       <div className="shorts-topbar">
-        <TabNav />
+        {!isFull && <TabNav />}
         {videos.length > 0 && (
           <div className="shorts-tools">
             <span className="shorts-count">
@@ -214,6 +250,13 @@ export default function Shorts() {
             </span>
             <button className="shorts-mute" onClick={toggleMute} aria-label={muted ? "音を出す" : "ミュート"}>
               {muted ? "🔇 ミュート中" : "🔊 音あり"}
+            </button>
+            <button
+              className="shorts-mute"
+              onClick={toggleFullscreen}
+              aria-label={isFull ? "全画面を終了" : "全画面で見る"}
+            >
+              {isFull ? "⤡ 全画面終了" : "⤢ 全画面"}
             </button>
           </div>
         )}

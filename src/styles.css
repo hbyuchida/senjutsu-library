@@ -292,3 +292,36 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .shorts-stage { max-width: 800px; }
   .shorts-title { font-size: 1.2rem; }
 }
+
+/* ===== ショート 全画面モード =====
+   YouTubeのiframeではなくページごと全画面にするので、
+   全画面のままタイトルを出したまま次の動画へ自動送りできる。 */
+.shorts-page.is-full { background: #000; }
+.shorts-page.is-full .shorts-topbar {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 3;
+  justify-content: flex-end; padding: 12px 20px;
+  background: linear-gradient(rgba(0, 0, 0, 0.6), transparent);
+  opacity: 0.25; transition: opacity 0.2s;
+}
+.shorts-page.is-full .shorts-topbar:hover,
+.shorts-page.is-full .shorts-topbar:focus-within { opacity: 1; }
+
+/* 全画面では動画を画面いっぱいに、情報は下部へ重ねて表示 */
+.shorts-page.is-full .shorts-slide { padding: 0; }
+.shorts-page.is-full .shorts-stage {
+  max-width: none; width: 100%; height: 100%; position: relative; gap: 0;
+}
+.shorts-page.is-full .shorts-frame {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  aspect-ratio: auto; border-radius: 0; border: none;
+}
+.shorts-page.is-full .shorts-meta {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 2;
+  padding: 48px 24px 28px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+  pointer-events: none; /* 動画のコントロールを妨げない */
+}
+.shorts-page.is-full .shorts-title { font-size: 1.35rem; text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9); }
+.shorts-page.is-full .shorts-memo,
+.shorts-page.is-full .shorts-badge { text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
+.shorts-page.is-full .shorts-badge { background: rgba(0, 0, 0, 0.35); }
