@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { fmt } from "../lib/utils";
 import { api } from "../lib/api";
@@ -12,6 +12,26 @@ const qualifies = (v) => {
   const len = clipLen(v);
   return len != null && len > 0 && len <= MAX_SEC;
 };
+
+// 再生順(順番 / ランダム)の保存先。次回訪問時も選択を引き継ぐ。
+const ORDER_KEY = "senjutsu-shorts-shuffle";
+const loadShufflePref = () => {
+  try {
+    return localStorage.getItem(ORDER_KEY) === "1";
+  } catch {
+    return false;
+  }
+};
+
+// Fisher-Yates で並びをシャッフル(元配列は壊さない)
+function shuffled(list) {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 // YouTube IFrame Player API を一度だけ読み込む
 let ytPromise = null;
@@ -35,7 +55,9 @@ function loadYT() {
 }
 
 export default function Shorts() {
-  const [videos, setVideos] = useState([]);
+  const [source, setSource] = useState([]); // 取得したままの順序(元データ)
+  const [videos, setVideos] = useState([]); // 実際に表示する順序(順番 or ランダム)
+  const [shuffle, setShuffle] = useState(loadShufflePref);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -62,7 +84,10 @@ export default function Shorts() {
       try {
         const list = await api.listVideos();
         if (!alive) return;
-        setVideos(list.filter(qualifies));
+        const target = list.filter(qualifies);
+        setSource(target);
+        // ランダム選択中なら初回表示から並びをシャッフルする
+        setVideos(shuffle ? shuffled(target) : target);
       } catch (e) {
         if (alive) setLoadError(e.message || "読み込みに失敗しました");
       } finally {
@@ -199,6 +224,26 @@ export default function Shorts() {
     });
   };
 
+  // 再生順の切替(順番 ⇔ ランダム)。切替時は先頭から見直せるよう一番上に戻す。
+  const toggleShuffle = () => {
+    const next = !shuffle;
+    setShuffle(next);
+    try {
+      localStorage.setItem(ORDER_KEY, next ? "1" : "0");
+    } catch {
+      /* プライベートモードなど。保存できなくても動作は継続 */
+    }
+    setVideos(next ? shuffled(source) : source);
+    setActiveIndex(0);
+  };
+
+  // 並び順が変わったら先頭へ。再描画でスライドが並び替わった「後」に戻さないと、
+  // ブラウザのスクロール位置復元に打ち消されて表示と再生中の動画がズレる。
+  useLayoutEffect(() => {
+    const root = containerRef.current;
+    if (root) root.scrollTop = 0;
+  }, [videos]);
+
   // 全画面切替。YouTubeのiframeではなくページ側を全画面にするため、
   // 全画面のまま次の動画へ自動送りでき、タイトルなどの情報も出したままにできる。
   const toggleFullscreen = async () => {
@@ -248,6 +293,13 @@ export default function Shorts() {
             <span className="shorts-count">
               {activeIndex + 1} / {videos.length}
             </span>
+            <button
+              className={`shorts-mute ${shuffle ? "on" : ""}`}
+              onClick={toggleShuffle}
+              aria-label={shuffle ? "順番に再生する" : "ランダムに再生する"}
+            >
+              {shuffle ? "🔀 ランダム" : "🔢 順番"}
+            </button>
             <button className="shorts-mute" onClick={toggleMute} aria-label={muted ? "音を出す" : "ミュート"}>
               {muted ? "🔇 ミュート中" : "🔊 音あり"}
             </button>

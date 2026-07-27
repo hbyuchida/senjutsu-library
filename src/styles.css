@@ -237,6 +237,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   border: 1.5px solid var(--line-faint); color: var(--line);
 }
 .shorts-mute:hover { border-color: var(--goal-orange); }
+/* ランダム再生ON(状態が一目で分かるよう色を付ける) */
+.shorts-mute.on { background: var(--goal-orange); border-color: var(--goal-orange); color: #fff; }
 
 .shorts-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px; padding: 60px 24px; }
 .shorts-empty h2 { font-size: 1.25rem; font-weight: 900; }
