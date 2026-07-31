@@ -436,6 +436,14 @@ export default function Library() {
   const clearAll = () => { setSelPhases([]); setSelSystems([]); setSelTags([]); setQuery(""); };
   const filterActive = selPhases.length || selSystems.length || selTags.length || query;
 
+  // トップ(絞り込みなし)は「新着5」と「人気5」だけを見せ、他は絞り込みで表示する
+  const HOME_N = 5;
+  const newest = videos.slice(0, HOME_N); // APIがcreated_at降順で返すため先頭が新着
+  const popular = useMemo(
+    () => [...videos].sort((a, b) => (b.plays || 0) - (a.plays || 0) || a.id - b.id).slice(0, HOME_N),
+    [videos]
+  );
+
   // ---- 操作ハンドラ ----
   const handleAdd = async (payload) => {
     const v = await api.addVideo(payload);
@@ -453,6 +461,12 @@ export default function Library() {
     } catch (e) {
       alert(e.message || "削除に失敗しました");
     }
+  };
+  const handlePlay = (video) => {
+    setPlaying(video);
+    // 再生数をカウント(人気ランキング用・失敗しても無視)
+    api.playVideo(video.id).catch(() => {});
+    setVideos((prev) => prev.map((x) => (x.id === video.id ? { ...x, plays: (x.plays || 0) + 1 } : x)));
   };
   const handleLogin = async (passcode) => {
     await api.login(passcode);
@@ -552,7 +566,7 @@ export default function Library() {
             <NineMeterArc width={180} color="rgba(242,238,230,0.25)" />
             <p>読み込みに失敗しました: {loadError}</p>
           </div>
-        ) : (
+        ) : filterActive ? (
           <>
             <p className="count-label">{filtered.length} / {videos.length} 本</p>
             {filtered.length === 0 ? (
@@ -568,7 +582,7 @@ export default function Library() {
                       key={item.key}
                       v={item.v}
                       isAdmin={isAdmin}
-                      onPlay={setPlaying}
+                      onPlay={handlePlay}
                       onEdit={setEditingVideo}
                       onDelete={handleDelete}
                     />
@@ -578,6 +592,36 @@ export default function Library() {
                 )}
               </div>
             )}
+          </>
+        ) : videos.length === 0 ? (
+          <div className="empty-state">
+            <NineMeterArc width={180} color="rgba(242,238,230,0.25)" />
+            <p>まだ動画がありません。「＋ 動画を追加」から登録できます。</p>
+          </div>
+        ) : (
+          <>
+            <section className="home-section">
+              <h2 className="home-heading">🆕 新着</h2>
+              <div className="grid">
+                {newest.map((v) => (
+                  <VideoCard key={`n-${v.id}`} v={v} isAdmin={isAdmin}
+                    onPlay={handlePlay} onEdit={setEditingVideo} onDelete={handleDelete} />
+                ))}
+              </div>
+            </section>
+            <section className="home-section">
+              <h2 className="home-heading">🔥 人気</h2>
+              <div className="grid">
+                {popular.map((v) => (
+                  <VideoCard key={`p-${v.id}`} v={v} isAdmin={isAdmin}
+                    onPlay={handlePlay} onEdit={setEditingVideo} onDelete={handleDelete} />
+                ))}
+              </div>
+            </section>
+            <p className="home-hint">
+              全 {videos.length} 本。上の<strong>局面・システム・タグ</strong>で絞り込むと、他の動画も表示されます。
+              もっと見たい方は上部の<Link to="/shorts" className="home-hint-link">ショート ▶</Link>もどうぞ。
+            </p>
           </>
         )}
       </main>

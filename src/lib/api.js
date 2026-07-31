@@ -26,6 +26,7 @@ export const api = {
   updateVideo: (id, v) =>
     req(`/api/videos/${id}`, { method: "PUT", body: JSON.stringify(v) }).then((d) => d.video),
   deleteVideo: (id) => req(`/api/videos/${id}`, { method: "DELETE" }),
+  playVideo: (id) => req(`/api/videos/${id}/play`, { method: "POST" }),
   session: () => req("/api/session").then((d) => d.admin),
   login: (passcode) => req("/api/login", { method: "POST", body: JSON.stringify({ passcode }) }),
   logout: () => req("/api/logout", { method: "POST" }),

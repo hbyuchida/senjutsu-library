@@ -28,6 +28,7 @@ export function rowToVideo(r) {
     start: r.start || 0,
     end: r.end_sec == null ? null : r.end_sec,
     sample: !!r.sample,
+    plays: r.plays || 0,
   };
 }
 

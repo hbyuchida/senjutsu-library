@@ -89,6 +89,12 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 
 /* ===== グリッド ===== */
 .count-label { font-family: "Barlow Condensed", sans-serif; letter-spacing: 0.1em; font-size: 0.875rem; color: var(--line-dim); margin-bottom: 16px; }
+.home-section { margin-bottom: 28px; }
+.home-heading { font-weight: 900; font-size: 1.2rem; letter-spacing: 0.03em; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid rgba(242, 238, 230, 0.15); }
+.home-hint { font-size: 0.875rem; line-height: 1.7; color: var(--line-dim); text-align: center; padding: 12px 0 4px; }
+.home-hint strong { color: var(--line); }
+.home-hint-link { color: var(--goal-orange); font-weight: 700; text-decoration: none; }
+.home-hint-link:hover { text-decoration: underline; }
 .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
 @media (min-width: 640px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1024px) { .grid { grid-template-columns: repeat(3, 1fr); } }
