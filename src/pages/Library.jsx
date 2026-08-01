@@ -523,22 +523,28 @@ export default function Library() {
       <section className="container filters">
         <div className="filter-row">
           <span className="filter-label">局面</span>
-          {phases.map((p) => (
-            <Chip key={p} label={p} active={selPhases.includes(p)} onClick={() => toggle(setSelPhases)(p)} tone="orange" />
-          ))}
+          <div className="chip-scroll">
+            {phases.map((p) => (
+              <Chip key={p} label={p} active={selPhases.includes(p)} onClick={() => toggle(setSelPhases)(p)} tone="orange" />
+            ))}
+          </div>
         </div>
         <div className="filter-row">
           <span className="filter-label">システム</span>
-          {systems.map((s) => (
-            <Chip key={s} label={s} active={selSystems.includes(s)} onClick={() => toggle(setSelSystems)(s)} />
-          ))}
+          <div className="chip-scroll">
+            {systems.map((s) => (
+              <Chip key={s} label={s} active={selSystems.includes(s)} onClick={() => toggle(setSelSystems)(s)} />
+            ))}
+          </div>
         </div>
         {allTags.length > 0 && (
           <div className="filter-row">
             <span className="filter-label">タグ</span>
-            {allTags.map((t) => (
-              <Chip key={t} label={`#${t}`} active={selTags.includes(t)} onClick={() => toggle(setSelTags)(t)} />
-            ))}
+            <div className="chip-scroll">
+              {allTags.map((t) => (
+                <Chip key={t} label={`#${t}`} active={selTags.includes(t)} onClick={() => toggle(setSelTags)(t)} />
+              ))}
+            </div>
           </div>
         )}
         <div className="filter-actions">

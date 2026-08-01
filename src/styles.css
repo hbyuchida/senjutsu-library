@@ -63,8 +63,21 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 
 /* ===== フィルタ ===== */
 .filters { display: flex; flex-direction: column; gap: 12px; padding-bottom: 20px; }
-.filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.filter-row { display: flex; flex-wrap: nowrap; align-items: center; gap: 10px; }
 .filter-label { width: 64px; flex-shrink: 0; font-family: "Barlow Condensed", sans-serif; letter-spacing: 0.15em; font-size: 0.75rem; color: var(--line-dim); }
+/* チップは折り返さず横スワイプで選ぶ(タグが増えても1行に収まる) */
+.chip-scroll {
+  flex: 1; min-width: 0; display: flex; flex-wrap: nowrap; align-items: center; gap: 8px;
+  overflow-x: auto; overflow-y: hidden; padding: 2px 2px 6px;
+  scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin; scrollbar-color: rgba(242,238,230,0.3) transparent;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 10px, #000 calc(100% - 18px), transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 10px, #000 calc(100% - 18px), transparent 100%);
+}
+.chip-scroll > .chip { flex: 0 0 auto; scroll-snap-align: start; }
+.chip-scroll::-webkit-scrollbar { height: 5px; }
+.chip-scroll::-webkit-scrollbar-thumb { background: rgba(242,238,230,0.25); border-radius: 999px; }
+.chip-scroll::-webkit-scrollbar-track { background: transparent; }
 .filter-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 4px; }
 .search-input {
   border-radius: 9999px; padding: 8px 16px; font-size: 0.875rem; flex: 1; max-width: 320px;
@@ -82,7 +95,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .search-input { max-width: none; width: 100%; }
   .clear-btn { align-self: flex-start; }
   .primary-btn { margin-left: 0; width: 100%; text-align: center; padding: 12px 20px; }
-  .filter-label { width: 100%; margin-bottom: -2px; }
+  .filter-label { width: 52px; font-size: 0.72rem; }
 }
 
 .court-line { border-top: 2px solid rgba(242, 238, 230, 0.2); }
