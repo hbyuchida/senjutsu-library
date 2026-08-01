@@ -1,8 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { parseYouTube, parseTimeInput, fmt } from "../lib/utils";
 import { api } from "../lib/api";
 import { NineMeterArc, Chip, AddChip, AdSlot, TabNav } from "../components/shared";
+
+// YouTube IFrame Player API を一度だけ読み込む(連続再生で終了を検知するため)
+let ytPromise = null;
+function loadYT() {
+  if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
+  if (ytPromise) return ytPromise;
+  ytPromise = new Promise((resolve) => {
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (typeof prev === "function") prev(); resolve(window.YT); };
+    if (!document.getElementById("yt-iframe-api")) {
+      const s = document.createElement("script");
+      s.id = "yt-iframe-api";
+      s.src = "https://www.youtube.com/iframe_api";
+      document.body.appendChild(s);
+    }
+  });
+  return ytPromise;
+}
 
 function VideoCard({ v, isAdmin, onPlay, onEdit, onDelete }) {
   const thumb = `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`;
@@ -43,23 +61,62 @@ function VideoCard({ v, isAdmin, onPlay, onEdit, onDelete }) {
   );
 }
 
-function PlayerModal({ v, onClose }) {
+// 連続再生対応プレーヤー。終了(または指定終了時刻)で自動的に次へ進む。
+function PlayerModal({ queue, index, onIndex, autoplay, setAutoplay, onCount, onClose }) {
+  const v = queue[index];
+  const mountRef = useRef(null);
+  const autoplayRef = useRef(autoplay); autoplayRef.current = autoplay;
+  const idxRef = useRef(index); idxRef.current = index;
+  const lenRef = useRef(queue.length); lenRef.current = queue.length;
+
+  useEffect(() => {
+    if (!v) return;
+    let player = null, poll = null, cancelled = false;
+    const container = mountRef.current;
+    onCount(v.id);
+    const onEnd = () => {
+      if (autoplayRef.current && idxRef.current < lenRef.current - 1) onIndex(idxRef.current + 1);
+    };
+    loadYT().then((YT) => {
+      if (cancelled || !container) return;
+      container.innerHTML = "";
+      const host = document.createElement("div");
+      host.style.width = "100%"; host.style.height = "100%";
+      container.appendChild(host);
+      const pv = { autoplay: 1, rel: 0, playsinline: 1, modestbranding: 1, start: v.start || 0 };
+      if (v.end != null) pv.end = v.end;
+      player = new YT.Player(host, {
+        videoId: v.videoId,
+        playerVars: pv,
+        events: {
+          onReady: (e) => e.target.playVideo(),
+          onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED) onEnd(); },
+        },
+      });
+      // end 指定時は ENDED ではなく PAUSED で止まるためポーリングで検知
+      if (v.end != null) {
+        poll = setInterval(() => {
+          try {
+            const t = player.getCurrentTime && player.getCurrentTime();
+            if (typeof t === "number" && t >= v.end - 0.4) onEnd();
+          } catch { /* 未準備 */ }
+        }, 400);
+      }
+    });
+    return () => {
+      cancelled = true;
+      if (poll) clearInterval(poll);
+      try { if (player && player.destroy) player.destroy(); } catch { /* 破棄済 */ }
+      if (container) container.innerHTML = "";
+    };
+  }, [v && v.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!v) return null;
-  const params = new URLSearchParams({ autoplay: "1", rel: "0" });
-  if (v.start) params.set("start", String(v.start));
-  if (v.end) params.set("end", String(v.end));
-  const src = `https://www.youtube.com/embed/${v.videoId}?${params.toString()}`;
+  const upNext = queue.slice(index + 1, index + 5);
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="player-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="player-frame">
-          <iframe
-            src={src}
-            title={v.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
+        <div className="player-frame"><div ref={mountRef} className="player-yt" /></div>
         <div className="player-info">
           <div className="player-head">
             <div>
@@ -68,6 +125,27 @@ function PlayerModal({ v, onClose }) {
             </div>
             <button className="close-btn" onClick={onClose}>閉じる</button>
           </div>
+          <div className="player-controls">
+            <button className="pc-btn" disabled={index === 0} onClick={() => onIndex(index - 1)}>← 前へ</button>
+            <label className="pc-auto">
+              <input type="checkbox" checked={autoplay} onChange={(e) => setAutoplay(e.target.checked)} />
+              連続再生
+            </label>
+            <button className="pc-btn" disabled={index >= queue.length - 1} onClick={() => onIndex(index + 1)}>次へ →</button>
+          </div>
+          {upNext.length > 0 && (
+            <div className="up-next">
+              <p className="up-next-label">次はこれ</p>
+              <div className="up-next-list">
+                {upNext.map((n, i) => (
+                  <button key={n.id} className="up-next-item" onClick={() => onIndex(index + 1 + i)}>
+                    <img src={`https://img.youtube.com/vi/${n.videoId}/mqdefault.jpg`} alt="" loading="lazy" />
+                    <span className="up-next-title">{n.title}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <AdSlot variant="banner" />
         </div>
       </div>
@@ -370,7 +448,8 @@ export default function Library() {
   const [selSystems, setSelSystems] = useState([]);
   const [selTags, setSelTags] = useState([]);
   const [query, setQuery] = useState("");
-  const [playing, setPlaying] = useState(null);
+  const [player, setPlayer] = useState(null); // { queue, index }
+  const [autoplay, setAutoplay] = useState(true);
   const [adding, setAdding] = useState(false);
   const [editingVideo, setEditingVideo] = useState(null);
   const [showLogin, setShowLogin] = useState(false);
@@ -462,11 +541,25 @@ export default function Library() {
       alert(e.message || "削除に失敗しました");
     }
   };
+  // 再生数カウント(人気ランキング用・失敗しても無視)。連続再生の各動画で呼ばれる
+  const countPlay = (id) => {
+    api.playVideo(id).catch(() => {});
+    setVideos((prev) => prev.map((x) => (x.id === id ? { ...x, plays: (x.plays || 0) + 1 } : x)));
+  };
+  // クリックした動画を先頭に、関連度(局面・システム・タグの一致)順で並べた連続再生キューを作る
+  const buildQueue = (start) => {
+    const score = (x) => {
+      let s = 0;
+      if (x.phase && x.phase === start.phase) s += 2;
+      s += x.systems.filter((y) => start.systems.includes(y)).length * 2;
+      s += x.tags.filter((y) => start.tags.includes(y)).length;
+      return s;
+    };
+    const others = videos.filter((x) => x.id !== start.id).sort((a, b) => score(b) - score(a));
+    return [start, ...others];
+  };
   const handlePlay = (video) => {
-    setPlaying(video);
-    // 再生数をカウント(人気ランキング用・失敗しても無視)
-    api.playVideo(video.id).catch(() => {});
-    setVideos((prev) => prev.map((x) => (x.id === video.id ? { ...x, plays: (x.plays || 0) + 1 } : x)));
+    setPlayer({ queue: buildQueue(video), index: 0 });
   };
   const handleLogin = async (passcode) => {
     await api.login(passcode);
@@ -643,7 +736,17 @@ export default function Library() {
         </p>
       </footer>
 
-      {playing && <PlayerModal v={playing} onClose={() => setPlaying(null)} />}
+      {player && (
+        <PlayerModal
+          queue={player.queue}
+          index={player.index}
+          onIndex={(i) => setPlayer((p) => (p ? { ...p, index: i } : p))}
+          autoplay={autoplay}
+          setAutoplay={setAutoplay}
+          onCount={countPlay}
+          onClose={() => setPlayer(null)}
+        />
+      )}
       {adding && (
         <VideoForm
           mode="add"
