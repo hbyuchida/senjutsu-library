@@ -39,4 +39,12 @@ export const api = {
     req("/api/taxonomy", { method: "PUT", body: JSON.stringify({ kind, oldName, newName }) }),
   deleteTaxonomy: (kind, name) =>
     req("/api/taxonomy", { method: "DELETE", body: JSON.stringify({ kind, name }) }),
+
+  // 記事(リンク / 直接執筆)
+  listArticles: () => req("/api/articles").then((d) => d.articles),
+  getArticle: (id) => req(`/api/articles/${id}`).then((d) => d.article),
+  addArticle: (a) => req("/api/articles", { method: "POST", body: JSON.stringify(a) }).then((d) => d.article),
+  updateArticle: (id, a) => req(`/api/articles/${id}`, { method: "PUT", body: JSON.stringify(a) }).then((d) => d.article),
+  deleteArticle: (id) => req(`/api/articles/${id}`, { method: "DELETE" }),
+  fetchOg: (url) => req(`/api/og?url=${encodeURIComponent(url)}`),
 };

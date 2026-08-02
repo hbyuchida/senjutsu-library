@@ -11,6 +11,9 @@ export function TabNav() {
       <NavLink to="/shorts" className={({ isActive }) => `tab-link ${isActive ? "active" : ""}`}>
         ショート ▶
       </NavLink>
+      <NavLink to="/articles" className={({ isActive }) => `tab-link ${isActive ? "active" : ""}`}>
+        記事 ✎
+      </NavLink>
     </nav>
   );
 }
