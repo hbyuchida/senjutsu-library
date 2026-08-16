@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+# APIは検索結果に出す必要がないためクロール対象から外す
+Disallow: /api/
+
+Sitemap: https://senjutsu-library.pages.dev/sitemap.xml
