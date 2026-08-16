@@ -290,6 +290,17 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .doc-page ul { padding-left: 20px; }
 .back-link { display: inline-block; margin-bottom: 24px; font-size: 0.875rem; color: var(--line-dim); }
 
+/* ===== 記事下部の関連動画 ===== */
+.related-videos { margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(242, 238, 230, 0.15); }
+.related-title { font-size: 1.05rem; font-weight: 900; margin-bottom: 16px; }
+.related-videos .card-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+@media (min-width: 640px) {
+  .related-videos .grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 960px) {
+  .related-videos .grid { grid-template-columns: repeat(3, 1fr); }
+}
+
 /* ===== タブナビ(ライブラリ / ショート) ===== */
 .tab-nav { display: flex; gap: 8px; padding: 16px 0 4px; }
 .tab-link {
