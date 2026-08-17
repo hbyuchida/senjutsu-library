@@ -15,6 +15,12 @@ const DEFAULT_ORIGIN = "https://senjutsu-library.pages.dev";
 const SITE_NAME = "戦術ライブラリ";
 const OG_IMAGE = "/icon-512.png";
 
+// Google Search Console の所有権確認。
+// HTMLファイル方式(/google….html)とHTMLタグ方式の両方を用意しておく。
+// 確認が完了したあとも消さないこと(消すと所有権の確認が解除される)。
+const VERIFY_PATH = "/google4834d1d49fbb0669.html";
+const GOOGLE_SITE_VERIFICATION = "nxnaRThR18DeBjiMHG53PrE8__irRV9TDD6I9mOmnCs";
+
 const esc = (s) =>
   String(s == null ? "" : s)
     .replace(/&/g, "&amp;")
@@ -276,11 +282,20 @@ export async function onRequest(context) {
 
   const url = new URL(context.request.url);
 
-  // 拡張子付きのパスは実ファイルなので中身を書き換えない。
-  // 例: Google Search Console の所有権確認ファイル(/google….html)は
-  // 1文字でも変わると確認に失敗するため、必ずそのまま返す。
-  // アプリの画面(/ , /shorts , /article/3 …)は拡張子を持たないので影響しない。
-  if (/\.[a-z0-9]+$/i.test(url.pathname)) return res;
+  // 拡張子付きのパスの扱い。
+  // 画像やrobots.txtなど実在する静的ファイルは、上のContent-Type判定で既に返っている。
+  // ここに来る「拡張子付き + HTML」は、存在しないファイルにSPAのindex.htmlが
+  // 返されている状態(ソフト404)。全URLが200を返すサイトだと、Googleは
+  // 所有権確認で「でたらめなファイル名」を試したときも200が返るため、
+  // 確認ファイルの内容を信用せず失敗させる。実在しないものは404を返す。
+  if (/\.[a-z0-9]+$/i.test(url.pathname)) {
+    // 所有権確認ファイルとトップのindex.htmlはそのまま通す
+    if (url.pathname === VERIFY_PATH || url.pathname === "/index.html") return res;
+    return new Response("Not Found", {
+      status: 404,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
 
   const path = url.pathname.replace(/\/+$/, "") || "/";
   const origin = context.env.SITE_ORIGIN || DEFAULT_ORIGIN;
@@ -322,6 +337,7 @@ export async function onRequest(context) {
       : "";
 
   const head = `
+    <meta name="google-site-verification" content="${esc(GOOGLE_SITE_VERIFICATION)}" />
     <link rel="canonical" href="${esc(canonical)}" />${noindex}
     <meta property="og:type" content="${ogType}" />
     <meta property="og:site_name" content="${esc(SITE_NAME)}" />
