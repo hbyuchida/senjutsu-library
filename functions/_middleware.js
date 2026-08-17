@@ -275,6 +275,13 @@ export async function onRequest(context) {
   if (!type.includes("text/html")) return res;
 
   const url = new URL(context.request.url);
+
+  // 拡張子付きのパスは実ファイルなので中身を書き換えない。
+  // 例: Google Search Console の所有権確認ファイル(/google….html)は
+  // 1文字でも変わると確認に失敗するため、必ずそのまま返す。
+  // アプリの画面(/ , /shorts , /article/3 …)は拡張子を持たないので影響しない。
+  if (/\.[a-z0-9]+$/i.test(url.pathname)) return res;
+
   const path = url.pathname.replace(/\/+$/, "") || "/";
   const origin = context.env.SITE_ORIGIN || DEFAULT_ORIGIN;
 
