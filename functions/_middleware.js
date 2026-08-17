@@ -337,7 +337,6 @@ export async function onRequest(context) {
       : "";
 
   const head = `
-    <meta name="google-site-verification" content="${esc(GOOGLE_SITE_VERIFICATION)}" />
     <link rel="canonical" href="${esc(canonical)}" />${noindex}
     <meta property="og:type" content="${ogType}" />
     <meta property="og:site_name" content="${esc(SITE_NAME)}" />
@@ -382,6 +381,12 @@ export async function onRequest(context) {
     })
     .on("head", {
       element(el) {
+        // 所有権確認のタグは <head> の先頭に置く。
+        // 確認ツールによっては先頭の一部しか読まないため、確実に見つかる位置にする。
+        el.prepend(
+          `\n    <meta name="google-site-verification" content="${esc(GOOGLE_SITE_VERIFICATION)}" />`,
+          { html: true }
+        );
         el.append(head, { html: true });
       },
     })
