@@ -74,7 +74,7 @@ async function articlesBodyHtml(env, meta) {
   let list = [];
   try {
     const { results } = await env.DB.prepare(
-      "SELECT id,type,title,excerpt,tags FROM articles ORDER BY created_at DESC, id DESC LIMIT 200"
+      "SELECT id,type,title,excerpt,tags FROM articles WHERE status='published' ORDER BY created_at DESC, id DESC LIMIT 200"
     ).all();
     list = results || [];
   } catch {
@@ -142,6 +142,131 @@ async function bodyHtml(env, path, meta) {
   )}</p>${items ? `<ul>${items}</ul>` : ""}</div>`;
 }
 
+// 構造化データ(JSON-LD)。検索結果にサムネイル付きで出る可能性を高める。
+// 動画は VideoObject、記事は Article、階層は BreadcrumbList で伝える。
+// </script> がそのまま入るとスクリプトが途中で閉じてしまうため必ず打ち消す。
+const jsonScript = (obj) =>
+  `\n    <script type="application/ld+json">${JSON.stringify(obj).replace(/</g, "\\u003c")}</script>`;
+
+const ytThumb = (id) => `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+const ytWatch = (id, start) =>
+  `https://www.youtube.com/watch?v=${id}${start ? `&t=${start}s` : ""}`;
+// ISO 8601 の再生時間(例: 95秒 → PT1M35S)
+const isoDuration = (sec) => {
+  const s = Math.max(0, Math.round(Number(sec) || 0));
+  return `PT${Math.floor(s / 60)}M${s % 60}S`;
+};
+
+async function jsonLd(env, { path, origin, canonical, meta, article }) {
+  const crumbs = (items) => ({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: it.name,
+      item: origin + it.path,
+    })),
+  });
+
+  // 記事ページ: Article + パンくず(下書きと外部リンク記事は出さない)
+  if (article) {
+    if (article.status === "draft" || article.type !== "post") return "";
+    let out = jsonScript({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      headline: String(article.title || "").slice(0, 110),
+      description: meta.description,
+      image: article.image ? [article.image] : [origin + OG_IMAGE],
+      datePublished: article.created_at ? new Date(Number(article.created_at)).toISOString() : undefined,
+      author: { "@type": "Person", name: SITE_NAME },
+      publisher: { "@type": "Organization", name: SITE_NAME },
+      mainEntityOfPage: canonical,
+      keywords: (() => {
+        try {
+          const t = JSON.parse(article.tags || "[]");
+          return Array.isArray(t) ? t.join(", ") : undefined;
+        } catch {
+          return undefined;
+        }
+      })(),
+    });
+    out += jsonScript(
+      crumbs([
+        { name: "ホーム", path: "/" },
+        { name: "記事", path: "/articles" },
+        { name: article.title, path: `/article/${article.id}` },
+      ])
+    );
+    return out;
+  }
+
+  // トップ / ショート: 掲載している動画を VideoObject の一覧として伝える
+  if (path === "/" || path === "/shorts") {
+    let videos = [];
+    try {
+      const { results } = await env.DB.prepare(
+        "SELECT video_id,title,memo,start,end_sec,created_at FROM videos ORDER BY created_at DESC, id DESC LIMIT 30"
+      ).all();
+      videos = results || [];
+    } catch {
+      /* 動画が取れなければ構造化データは省く */
+    }
+    if (path === "/shorts") {
+      videos = videos.filter((v) => {
+        const end = v.end_sec == null || v.end_sec === "null" ? null : Number(v.end_sec);
+        if (end == null || Number.isNaN(end)) return false;
+        const len = end - (Number(v.start) || 0);
+        return len > 0 && len <= 8 * 60;
+      });
+    }
+    let out = "";
+    if (videos.length) {
+      out += jsonScript({
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: meta.title,
+        itemListElement: videos.slice(0, 20).map((v, i) => {
+          const end = v.end_sec == null || v.end_sec === "null" ? null : Number(v.end_sec);
+          const len = end != null ? end - (Number(v.start) || 0) : null;
+          return {
+            "@type": "ListItem",
+            position: i + 1,
+            item: {
+              "@type": "VideoObject",
+              name: String(v.title || "").slice(0, 110),
+              description: (v.memo || v.title || "").slice(0, 300),
+              thumbnailUrl: [ytThumb(v.video_id)],
+              uploadDate: v.created_at ? new Date(Number(v.created_at)).toISOString() : undefined,
+              duration: len && len > 0 ? isoDuration(len) : undefined,
+              embedUrl: `https://www.youtube.com/embed/${v.video_id}`,
+              contentUrl: ytWatch(v.video_id, Number(v.start) || 0),
+            },
+          };
+        }),
+      });
+    }
+    if (path === "/") {
+      out += jsonScript({
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        name: SITE_NAME,
+        url: `${origin}/`,
+        description: meta.description,
+        inLanguage: "ja",
+      });
+    } else {
+      out += jsonScript(crumbs([{ name: "ホーム", path: "/" }, { name: "ショート", path: "/shorts" }]));
+    }
+    return out;
+  }
+
+  if (path === "/articles") {
+    return jsonScript(crumbs([{ name: "ホーム", path: "/" }, { name: "記事", path: "/articles" }]));
+  }
+  return "";
+}
+
 export async function onRequest(context) {
   const res = await context.next();
 
@@ -159,7 +284,7 @@ export async function onRequest(context) {
   if (articleId) {
     try {
       article = await context.env.DB.prepare(
-        "SELECT id,type,title,excerpt,body,image FROM articles WHERE id=?"
+        "SELECT id,type,title,excerpt,body,image,tags,created_at,status FROM articles WHERE id=?"
       )
         .bind(articleId)
         .first();
@@ -181,10 +306,11 @@ export async function onRequest(context) {
   const ogType = article && article.type === "post" ? "article" : "website";
   const ogImage = article && article.image ? article.image : origin + OG_IMAGE;
 
-  // 外部リンクを紹介するだけの記事は、このサイト側に独自の本文が無い。
-  // 検索結果に内容の薄いページを出さないよう登録対象から外す。
+  // 検索結果に出したくないページ:
+  //  ・外部リンクを紹介するだけの記事(このサイト側に独自の本文が無い)
+  //  ・下書き(未公開)
   const noindex =
-    article && article.type === "link"
+    article && (article.type === "link" || article.status === "draft")
       ? `\n    <meta name="robots" content="noindex,follow" />`
       : "";
 
@@ -200,7 +326,13 @@ export async function onRequest(context) {
     <meta name="twitter:card" content="${article && article.image ? "summary_large_image" : "summary"}" />
     <meta name="twitter:title" content="${esc(meta.title)}" />
     <meta name="twitter:description" content="${esc(meta.description)}" />
-    <meta name="twitter:image" content="${esc(ogImage)}" />`;
+    <meta name="twitter:image" content="${esc(ogImage)}" />${await jsonLd(context.env, {
+      path,
+      origin,
+      canonical,
+      meta,
+      article,
+    })}`;
 
   // 中身のあるページだけ本文を差し込む(規約ページなどは元のままで十分)
   let body = "";

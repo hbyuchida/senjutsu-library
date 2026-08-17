@@ -33,8 +33,9 @@ export async function onRequestGet({ env }) {
   ];
 
   try {
+    // 下書き(status='draft')は未公開なので載せない
     const { results } = await env.DB.prepare(
-      "SELECT id, created_at FROM articles WHERE type = 'post' ORDER BY created_at DESC LIMIT 1000"
+      "SELECT id, created_at FROM articles WHERE type = 'post' AND status = 'published' ORDER BY created_at DESC LIMIT 1000"
     ).all();
     for (const a of results || []) {
       urls.push({

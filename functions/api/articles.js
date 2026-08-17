@@ -13,6 +13,7 @@ function rowToArticle(r, full = false) {
     excerpt: r.excerpt || "",
     tags: safeArr(r.tags),
     createdAt: r.created_at,
+    status: r.status === "draft" ? "draft" : "published",
   };
   if (full) base.body = r.body || "";
   return base;
@@ -22,10 +23,14 @@ function safeArr(s) {
 }
 export { rowToArticle };
 
-export async function onRequestGet({ env }) {
-  const { results } = await env.DB
-    .prepare("SELECT id,type,title,url,image,excerpt,tags,created_at FROM articles ORDER BY created_at DESC, id DESC")
-    .all();
+// 下書きは管理者にだけ見せる。一般の訪問者・検索エンジンには公開記事だけを返す。
+export async function onRequestGet(context) {
+  const { env } = context;
+  const admin = await isAdmin(context).catch(() => false);
+  const sql = admin
+    ? "SELECT id,type,title,url,image,excerpt,tags,created_at,status FROM articles ORDER BY created_at DESC, id DESC"
+    : "SELECT id,type,title,url,image,excerpt,tags,created_at,status FROM articles WHERE status='published' ORDER BY created_at DESC, id DESC";
+  const { results } = await env.DB.prepare(sql).all();
   return json({ articles: results.map((r) => rowToArticle(r)) });
 }
 
@@ -39,19 +44,23 @@ export async function onRequestPost(context) {
   const title = (b.title || "").toString().trim().slice(0, 200);
   if (!title) return json({ error: "タイトルは必須です" }, 400);
 
+  const status = b.status === "draft" ? "draft" : "published";
   const url = (b.url || "").toString().trim().slice(0, 2000);
-  if (type === "link" && !/^https?:\/\//i.test(url)) return json({ error: "http(s)から始まるURLを入力してください" }, 400);
-
+  // 下書きは書きかけで保存できるようにし、公開するときだけURLを必須にする
+  if (type === "link" && status !== "draft" && !/^https?:\/\//i.test(url)) {
+    return json({ error: "http(s)から始まるURLを入力してください" }, 400);
+  }
   const now = Date.now();
   const res = await env.DB
-    .prepare("INSERT INTO articles (type,title,url,image,excerpt,body,tags,created_at) VALUES (?,?,?,?,?,?,?,?)")
+    .prepare("INSERT INTO articles (type,title,url,image,excerpt,body,tags,created_at,status) VALUES (?,?,?,?,?,?,?,?,?)")
     .bind(
       type, title, url,
       (b.image || "").toString().slice(0, 2000),
       (b.excerpt || "").toString().slice(0, 600),
       type === "post" ? (b.body || "").toString().slice(0, 40000) : "",
       JSON.stringify(Array.isArray(b.tags) ? b.tags.map(String).slice(0, 20) : []),
-      now
+      now,
+      status
     )
     .run();
   const row = await env.DB.prepare("SELECT * FROM articles WHERE id=?").bind(res.meta.last_row_id).first();

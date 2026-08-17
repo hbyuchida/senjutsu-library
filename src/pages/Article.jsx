@@ -174,6 +174,9 @@ export default function Article() {
         ) : (
           <article className="post">
             <p className="post-back"><Link to="/articles">← 記事一覧</Link></p>
+            {a.status === "draft" && (
+              <p className="draft-notice">下書き（未公開）です。この記事はあなたにだけ表示され、検索にも出ません。</p>
+            )}
             <h1 className="post-title">{a.title}</h1>
             <div className="post-meta">
               <span className="art-date">{fmtDate(a.createdAt)}</span>

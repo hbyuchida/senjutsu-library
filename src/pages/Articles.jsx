@@ -18,6 +18,7 @@ function ArticleCard({ a, isAdmin, onEdit, onDelete }) {
       <div className="art-thumb">
         {a.image ? <img src={a.image} alt="" loading="lazy" /> : <span className="art-thumb-ph">{a.type === "post" ? "✎" : "🔗"}</span>}
         <span className="art-badge">{a.type === "post" ? "記事" : "リンク"}</span>
+        {a.status === "draft" && <span className="art-badge draft">下書き</span>}
       </div>
       <div className="art-body">
         <h3 className="art-title">{a.title}</h3>
@@ -30,8 +31,9 @@ function ArticleCard({ a, isAdmin, onEdit, onDelete }) {
     </>
   );
   return (
-    <div className="art-card">
-      {a.type === "post" ? (
+    <div className={`art-card ${a.status === "draft" ? "is-draft" : ""}`}>
+      {/* 下書きのリンク記事はURLが未入力のことがあるので、記事ページで確認できるようにする */}
+      {a.type === "post" || a.status === "draft" ? (
         <Link className="art-link" to={`/article/${a.id}`}>{inner}</Link>
       ) : (
         <a className="art-link" href={a.url} target="_blank" rel="noopener noreferrer">{inner}</a>
@@ -48,6 +50,7 @@ function ArticleCard({ a, isAdmin, onEdit, onDelete }) {
 
 function ArticleForm({ initial, onSubmit, onClose }) {
   const editing = !!initial;
+  const isDraft = initial?.status === "draft";
   const [mode, setMode] = useState(initial?.type || "link");
   const [url, setUrl] = useState(initial?.url || "");
   const [title, setTitle] = useState(initial?.title || "");
@@ -76,9 +79,13 @@ function ArticleForm({ initial, onSubmit, onClose }) {
     }
   };
 
-  const submit = async () => {
+  // status: "draft"(下書き保存) または "published"(公開)
+  const submit = async (status) => {
     if (!title.trim()) { setErr("タイトルを入力してください"); return; }
-    if (mode === "link" && !/^https?:\/\//i.test(url)) { setErr("http(s)から始まるURLを入力してください"); return; }
+    // 下書きは書きかけで保存できるよう、URLの必須チェックは公開時だけ行う
+    if (status === "published" && mode === "link" && !/^https?:\/\//i.test(url)) {
+      setErr("http(s)から始まるURLを入力してください"); return;
+    }
     const payload = {
       type: mode,
       title: title.trim(),
@@ -87,6 +94,7 @@ function ArticleForm({ initial, onSubmit, onClose }) {
       excerpt: excerpt.trim(),
       body: mode === "post" ? body : "",
       tags: tags.split(/[,、\s]+/).map((t) => t.trim()).filter(Boolean),
+      status,
     };
     setErr(""); setBusy(true);
     try {
@@ -149,8 +157,11 @@ function ArticleForm({ initial, onSubmit, onClose }) {
         {err && <p className="form-error">{err}</p>}
         <div className="form-actions">
           <button className="cancel-btn" onClick={onClose} disabled={busy}>キャンセル</button>
-          <button className="primary-btn" style={{ marginLeft: 0 }} onClick={submit} disabled={busy}>
-            {busy ? "保存中…" : editing ? "更新する" : "公開する"}
+          <button className="draft-btn" onClick={() => submit("draft")} disabled={busy}>
+            {busy ? "保存中…" : "下書き保存"}
+          </button>
+          <button className="primary-btn" style={{ marginLeft: 0 }} onClick={() => submit("published")} disabled={busy}>
+            {busy ? "保存中…" : isDraft ? "公開する" : editing ? "更新する" : "公開する"}
           </button>
         </div>
       </div>
@@ -190,6 +201,16 @@ export default function Articles() {
   const handleUpdate = async (payload) => {
     const a = await api.updateArticle(editing.id, payload);
     setArticles((prev) => prev.map((x) => (x.id === a.id ? a : x)));
+  };
+  // 一覧のデータには本文(body)が含まれていない。そのまま編集フォームへ渡すと
+  // 本文が空のまま保存され、書いた記事が消えてしまう。
+  // 編集を開くときは必ず本文つきの記事を取り直す。
+  const openEdit = async (a) => {
+    try {
+      setEditing(await api.getArticle(a.id));
+    } catch (e) {
+      alert(`記事の読み込みに失敗しました。本文が消えるのを防ぐため編集を中止します。\n${e.message || ""}`);
+    }
   };
   const handleDelete = async (a) => {
     if (!window.confirm(`「${a.title}」を削除しますか?`)) return;
@@ -235,7 +256,7 @@ export default function Articles() {
         ) : (
           <div className="art-grid">
             {articles.map((a) => (
-              <ArticleCard key={a.id} a={a} isAdmin={isAdmin} onEdit={setEditing} onDelete={handleDelete} />
+              <ArticleCard key={a.id} a={a} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
             ))}
           </div>
         )}

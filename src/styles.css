@@ -290,6 +290,19 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .doc-page ul { padding-left: 20px; }
 .back-link { display: inline-block; margin-bottom: 24px; font-size: 0.875rem; color: var(--line-dim); }
 
+/* ===== 下書き ===== */
+.art-badge.draft { left: auto; right: 8px; background: var(--goal-orange); color: #fff; }
+.art-card.is-draft { border-style: dashed; opacity: 0.9; }
+.draft-btn {
+  border-radius: 9999px; padding: 8px 18px; font-size: 0.9rem; font-weight: 700;
+  border: 1.5px solid var(--line-faint); color: var(--line);
+}
+.draft-btn:hover { border-color: var(--goal-orange); }
+.draft-notice {
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.85rem; font-weight: 700;
+  border: 1px dashed var(--goal-orange); color: var(--goal-orange);
+}
+
 /* ===== 記事下部の関連動画 ===== */
 .related-videos { margin-top: 32px; padding-top: 24px; border-top: 1px solid rgba(242, 238, 230, 0.15); }
 .related-title { font-size: 1.05rem; font-weight: 900; margin-bottom: 16px; }
