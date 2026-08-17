@@ -11,8 +11,11 @@ const CONTENT = "google-site-verification: google4834d1d49fbb0669.html";
 export function onRequestGet() {
   return new Response(CONTENT, {
     headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": "public, max-age=3600",
+      // 実際にアップロードした .html ファイルと同じ形で返す
+      "Content-Type": "text/html; charset=utf-8",
+      // 確認をやり直したときに古い内容が使われないよう、キャッシュさせない。
+      // (デプロイ伝播中に一度アプリのHTMLが返り、確認が失敗したことがあるため)
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
     },
   });
 }
