@@ -588,6 +588,17 @@ export default function Library() {
     if ((i + 1) % 6 === 0) gridItems.push({ type: "ad", key: `ad-${i}` });
   });
 
+  // トップの「すべての動画」用。全件並ぶため、絞り込み結果(6件ごと)より
+  // 広告の間隔を広げて、広告だらけの画面にならないようにする。
+  const allItems = useMemo(() => {
+    const items = [];
+    videos.forEach((v, i) => {
+      items.push({ type: "video", v, key: `a-${v.id}` });
+      if ((i + 1) % 12 === 0 && i + 1 < videos.length) items.push({ type: "ad", key: `aad-${i}` });
+    });
+    return items;
+  }, [videos]);
+
   return (
     <>
       <div className="admin-bar container">
@@ -717,9 +728,22 @@ export default function Library() {
                 ))}
               </div>
             </section>
+            <section className="home-section">
+              <h2 className="home-heading">📚 すべての動画 <span className="home-count">{videos.length}本</span></h2>
+              <div className="grid">
+                {allItems.map((item) =>
+                  item.type === "video" ? (
+                    <VideoCard key={item.key} v={item.v} isAdmin={isAdmin}
+                      onPlay={handlePlay} onEdit={setEditingVideo} onDelete={handleDelete} />
+                  ) : (
+                    <AdSlot key={item.key} variant="card" />
+                  )
+                )}
+              </div>
+            </section>
             <p className="home-hint">
-              全 {videos.length} 本。上の<strong>局面・システム・タグ</strong>で絞り込むと、他の動画も表示されます。
-              もっと見たい方は上部の<Link to="/shorts" className="home-hint-link">ショート ▶</Link>もどうぞ。
+              上の<strong>局面・システム・タグ</strong>で絞り込むと、目的の動画を探しやすくなります。
+              短いクリップを次々に見たい方は<Link to="/shorts" className="home-hint-link">ショート ▶</Link>もどうぞ。
             </p>
           </>
         )}

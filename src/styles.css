@@ -425,3 +425,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .shorts-page.is-full .shorts-memo,
 .shorts-page.is-full .shorts-badge { text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9); }
 .shorts-page.is-full .shorts-badge { background: rgba(0, 0, 0, 0.35); }
+
+/* 「すべての動画」見出しの件数表示 */
+.home-count { font-size: 0.8rem; font-weight: 700; color: var(--line-dim); margin-left: 8px; }
