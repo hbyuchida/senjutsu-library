@@ -1,4 +1,4 @@
-// 分類マスタ(局面・システム・タグ)の一覧と管理。
+// 分類マスタ(局面・システム・タグ・チーム・代表・選手)の一覧と管理。
 // GET    … 一覧(公開。チップ表示に使う)
 // POST   … 追加(管理者のみ)
 // PUT    … 名称変更(管理者のみ。全動画のphase/systems/tagsにも反映)
@@ -6,16 +6,27 @@
 import { json } from "./_util.js";
 import { isAdmin } from "./_auth.js";
 
-const KINDS = ["phase", "system", "tag"];
-const COL = { system: "systems", tag: "tags" };
+// team(クラブ) / national(代表) / player(選手) は動画の tags 列に入る点は tag と同じ。
+// 種別を分けているのは、絞り込みのタブを分けて選びやすくするため。
+const KINDS = ["phase", "system", "tag", "team", "national", "player"];
+const COL = { system: "systems", tag: "tags", team: "tags", national: "tags", player: "tags" };
+
+// 種別 → APIで返すキー名
+const GROUP = {
+  phase: "phases",
+  system: "systems",
+  tag: "tags",
+  team: "teams",
+  national: "nationals",
+  player: "players",
+};
 
 export async function onRequestGet({ env }) {
   const { results } = await env.DB.prepare("SELECT kind, name FROM taxonomy ORDER BY id").all();
-  const out = { phases: [], systems: [], tags: [] };
+  const out = { phases: [], systems: [], tags: [], teams: [], nationals: [], players: [] };
   for (const r of results) {
-    if (r.kind === "phase") out.phases.push(r.name);
-    else if (r.kind === "system") out.systems.push(r.name);
-    else if (r.kind === "tag") out.tags.push(r.name);
+    const key = GROUP[r.kind];
+    if (key) out[key].push(r.name);
   }
   return json(out);
 }

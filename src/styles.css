@@ -428,3 +428,20 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 
 /* 「すべての動画」見出しの件数表示 */
 .home-count { font-size: 0.8rem; font-weight: 700; color: var(--line-dim); margin-left: 8px; }
+
+/* ===== 絞り込みタブ(局面/システム/チーム/代表/選手/タグ) ===== */
+.filter-tabs { display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.filter-tabs::-webkit-scrollbar { display: none; }
+.filter-tab {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+  border-radius: 9999px; padding: 6px 14px; font-size: 0.85rem; font-weight: 700;
+  border: 1.5px solid var(--line-faint); color: var(--line-dim);
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+.filter-tab.active { background: var(--line); border-color: var(--line); color: var(--court-deep); }
+.filter-tab.has-sel:not(.active) { border-color: var(--goal-orange); color: var(--line); }
+.filter-tab-badge {
+  border-radius: 9999px; min-width: 18px; padding: 0 5px; font-size: 0.7rem; line-height: 18px;
+  text-align: center; background: var(--goal-orange); color: #fff;
+}
+.filter-empty { font-size: 0.85rem; color: var(--line-dim); padding: 4px 2px; }

@@ -22,6 +22,16 @@ function loadYT() {
   return ytPromise;
 }
 
+// 絞り込みタブ。局面・システムは専用の列、それ以外は動画の tags に入る。
+const FILTER_TABS = [
+  { key: "phase", label: "局面" },
+  { key: "system", label: "システム" },
+  { key: "team", label: "チーム" },
+  { key: "national", label: "代表" },
+  { key: "player", label: "選手" },
+  { key: "tag", label: "タグ" },
+];
+
 function VideoCard({ v, isAdmin, onPlay, onEdit, onDelete }) {
   const thumb = `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`;
   const range =
@@ -434,11 +444,12 @@ function TagManager({ taxonomy, onAdd, onRename, onDelete, onClose }) {
 
 export default function Library() {
   const [videos, setVideos] = useState([]);
-  const [taxo, setTaxo] = useState({ phases: [], systems: [], tags: [] });
+  const [taxo, setTaxo] = useState({ phases: [], systems: [], tags: [], teams: [], nationals: [], players: [] });
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [showTagMgr, setShowTagMgr] = useState(false);
+  const [filterTab, setFilterTab] = useState("phase"); // 絞り込みタブ
 
   // フォーム用の局面・システム候補(セッション中に追加したものを即時表示するため)
   const [extraPhases, setExtraPhases] = useState([]);
@@ -493,10 +504,37 @@ export default function Library() {
     () => uniq([...taxo.systems, ...videos.flatMap((v) => v.systems), ...extraSystems]),
     [taxo, videos, extraSystems]
   );
-  const allTags = useMemo(
-    () => uniq([...taxo.tags, ...videos.flatMap((v) => v.tags)]),
-    [taxo, videos]
+  const teams = useMemo(() => uniq(taxo.teams || []), [taxo]);
+  const nationals = useMemo(() => uniq(taxo.nationals || []), [taxo]);
+  const players = useMemo(() => uniq(taxo.players || []), [taxo]);
+  // チーム・代表・選手として登録済みの名前は「タグ」タブから除く
+  const special = useMemo(
+    () => new Set([...teams, ...nationals, ...players]),
+    [teams, nationals, players]
   );
+  const allTags = useMemo(
+    () => uniq([...taxo.tags, ...videos.flatMap((v) => v.tags)]).filter((t) => !special.has(t)),
+    [taxo, videos, special]
+  );
+
+  // 選択中のタブに出すチップ
+  const tabItems = useMemo(() => {
+    if (filterTab === "phase") return phases;
+    if (filterTab === "system") return systems;
+    if (filterTab === "team") return teams;
+    if (filterTab === "national") return nationals;
+    if (filterTab === "player") return players;
+    return allTags;
+  }, [filterTab, phases, systems, teams, nationals, players, allTags]);
+
+  // タブに何個選択中かをバッジで出す(隠れたタブの絞り込みに気づけるように)
+  const tabSelectedCount = (key) => {
+    if (key === "phase") return selPhases.length;
+    if (key === "system") return selSystems.length;
+    const list =
+      key === "team" ? teams : key === "national" ? nationals : key === "player" ? players : allTags;
+    return selTags.filter((t) => list.includes(t)).length;
+  };
 
   const addPhase = (v) => setExtraPhases((prev) => (prev.includes(v) ? prev : [...prev, v]));
   const addSystem = (v) => setExtraSystems((prev) => (prev.includes(v) ? prev : [...prev, v]));
@@ -625,32 +663,43 @@ export default function Library() {
       <div className="container ad-wrap"><AdSlot variant="banner" /></div>
 
       <section className="container filters">
-        <div className="filter-row">
-          <span className="filter-label">局面</span>
-          <div className="chip-scroll">
-            {phases.map((p) => (
-              <Chip key={p} label={p} active={selPhases.includes(p)} onClick={() => toggle(setSelPhases)(p)} tone="orange" />
-            ))}
-          </div>
+        {/* 絞り込みタブ。項目が増えても1行に収まるよう、選んだ種別のチップだけを出す */}
+        <div className="filter-tabs">
+          {FILTER_TABS.map((t) => {
+            const n = tabSelectedCount(t.key);
+            return (
+              <button
+                key={t.key}
+                className={`filter-tab ${filterTab === t.key ? "active" : ""} ${n ? "has-sel" : ""}`}
+                onClick={() => setFilterTab(t.key)}
+              >
+                {t.label}
+                {n > 0 && <span className="filter-tab-badge">{n}</span>}
+              </button>
+            );
+          })}
         </div>
+
         <div className="filter-row">
-          <span className="filter-label">システム</span>
           <div className="chip-scroll">
-            {systems.map((s) => (
-              <Chip key={s} label={s} active={selSystems.includes(s)} onClick={() => toggle(setSelSystems)(s)} />
-            ))}
-          </div>
-        </div>
-        {allTags.length > 0 && (
-          <div className="filter-row">
-            <span className="filter-label">タグ</span>
-            <div className="chip-scroll">
-              {allTags.map((t) => (
+            {tabItems.length === 0 ? (
+              <span className="filter-empty">この分類はまだありません</span>
+            ) : filterTab === "phase" ? (
+              tabItems.map((p) => (
+                <Chip key={p} label={p} active={selPhases.includes(p)} onClick={() => toggle(setSelPhases)(p)} tone="orange" />
+              ))
+            ) : filterTab === "system" ? (
+              tabItems.map((s) => (
+                <Chip key={s} label={s} active={selSystems.includes(s)} onClick={() => toggle(setSelSystems)(s)} />
+              ))
+            ) : (
+              // タグ・チーム・代表・選手は、動画側ではどれも tags に入っているので同じ扱い
+              tabItems.map((t) => (
                 <Chip key={t} label={`#${t}`} active={selTags.includes(t)} onClick={() => toggle(setSelTags)(t)} />
-              ))}
-            </div>
+              ))
+            )}
           </div>
-        )}
+        </div>
         <div className="filter-actions">
           <input
             className="search-input"
