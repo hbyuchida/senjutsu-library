@@ -445,3 +445,12 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   text-align: center; background: var(--goal-orange); color: #fff;
 }
 .filter-empty { font-size: 0.85rem; color: var(--line-dim); padding: 4px 2px; }
+
+/* 「もっと見る」ボタン */
+.more-wrap { display: flex; justify-content: center; padding: 20px 0 4px; }
+.more-btn {
+  border-radius: 9999px; padding: 11px 26px; font-size: 0.9rem; font-weight: 700;
+  border: 1.5px solid var(--line-faint); color: var(--line);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.more-btn:hover { border-color: var(--goal-orange); background: rgba(232, 98, 44, 0.12); }

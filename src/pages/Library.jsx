@@ -22,6 +22,9 @@ function loadYT() {
   return ytPromise;
 }
 
+// 一度に表示する件数(「もっと見る」で増やす)
+const PAGE_N = 24;
+
 // 絞り込みタブ。局面・システムは専用の列、それ以外は動画の tags に入る。
 const FILTER_TABS = [
   { key: "phase", label: "局面" },
@@ -31,6 +34,19 @@ const FILTER_TABS = [
   { key: "player", label: "選手" },
   { key: "tag", label: "タグ" },
 ];
+
+// 残りがあるときだけ出す「もっと見る」ボタン
+function MoreButton({ shown, total, onMore }) {
+  if (shown >= total) return null;
+  const rest = total - shown;
+  return (
+    <div className="more-wrap">
+      <button className="more-btn" onClick={() => onMore(Math.min(shown + PAGE_N, total))}>
+        もっと見る（残り {rest} 本）
+      </button>
+    </div>
+  );
+}
 
 function VideoCard({ v, isAdmin, onPlay, onEdit, onDelete }) {
   const thumb = `https://img.youtube.com/vi/${v.videoId}/hqdefault.jpg`;
@@ -450,6 +466,9 @@ export default function Library() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showTagMgr, setShowTagMgr] = useState(false);
   const [filterTab, setFilterTab] = useState("phase"); // 絞り込みタブ
+  // 「もっと見る」の表示件数。全件を一度に描画すると重いため少しずつ出す。
+  const [shownFiltered, setShownFiltered] = useState(PAGE_N);
+  const [shownAll, setShownAll] = useState(PAGE_N);
 
   // フォーム用の局面・システム候補(セッション中に追加したものを即時表示するため)
   const [extraPhases, setExtraPhases] = useState([]);
@@ -550,6 +569,11 @@ export default function Library() {
     return true;
   });
 
+  // 絞り込みを変えたら表示件数を最初に戻す
+  useEffect(() => {
+    setShownFiltered(PAGE_N);
+  }, [selPhases, selSystems, selTags, query]);
+
   const clearAll = () => { setSelPhases([]); setSelSystems([]); setSelTags([]); setQuery(""); };
   const filterActive = selPhases.length || selSystems.length || selTags.length || query;
 
@@ -620,22 +644,25 @@ export default function Library() {
     await refreshData();
   };
 
+  // 一度に全件描画すると重いので、少しずつ表示して「もっと見る」で足していく
+  const shownFilteredList = filtered.slice(0, shownFiltered);
   const gridItems = [];
-  filtered.forEach((v, i) => {
+  shownFilteredList.forEach((v, i) => {
     gridItems.push({ type: "video", v, key: `v-${v.id}` });
-    if ((i + 1) % 6 === 0) gridItems.push({ type: "ad", key: `ad-${i}` });
+    if ((i + 1) % 6 === 0 && i + 1 < shownFilteredList.length) gridItems.push({ type: "ad", key: `ad-${i}` });
   });
 
   // トップの「すべての動画」用。全件並ぶため、絞り込み結果(6件ごと)より
   // 広告の間隔を広げて、広告だらけの画面にならないようにする。
   const allItems = useMemo(() => {
     const items = [];
-    videos.forEach((v, i) => {
+    const list = videos.slice(0, shownAll);
+    list.forEach((v, i) => {
       items.push({ type: "video", v, key: `a-${v.id}` });
-      if ((i + 1) % 12 === 0 && i + 1 < videos.length) items.push({ type: "ad", key: `aad-${i}` });
+      if ((i + 1) % 12 === 0 && i + 1 < list.length) items.push({ type: "ad", key: `aad-${i}` });
     });
     return items;
-  }, [videos]);
+  }, [videos, shownAll]);
 
   return (
     <>
@@ -751,6 +778,7 @@ export default function Library() {
                 )}
               </div>
             )}
+            <MoreButton shown={shownFiltered} total={filtered.length} onMore={setShownFiltered} />
           </>
         ) : videos.length === 0 ? (
           <div className="empty-state">
@@ -789,6 +817,7 @@ export default function Library() {
                   )
                 )}
               </div>
+              <MoreButton shown={shownAll} total={videos.length} onMore={setShownAll} />
             </section>
             <p className="home-hint">
               上の<strong>局面・システム・タグ</strong>で絞り込むと、目的の動画を探しやすくなります。
