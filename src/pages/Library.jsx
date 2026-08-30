@@ -22,6 +22,9 @@ function loadYT() {
   return ytPromise;
 }
 
+// タイトルとメモの最低文字数(内容が分かる説明を必ず入れてもらうため)
+const MIN_LEN = 10;
+
 // 一度に表示する件数(「もっと見る」で増やす)
 const PAGE_N = 24;
 
@@ -45,6 +48,17 @@ function MoreButton({ shown, total, onMore }) {
         もっと見る（残り {rest} 本）
       </button>
     </div>
+  );
+}
+
+// 入力中に「あと何文字か」が分かるようにする
+function CharCount({ value }) {
+  const n = (value || "").trim().length;
+  const ok = n >= MIN_LEN;
+  return (
+    <span className={`char-count ${ok ? "ok" : ""}`}>
+      {ok ? `${n}文字` : `あと${MIN_LEN - n}文字`}
+    </span>
   );
 }
 
@@ -203,7 +217,12 @@ function VideoForm({ mode, initial, onSubmit, onClose, phases, systems, onAddPha
 
   const submit = async () => {
     if (!parsed) { setErr("YouTubeのURLを確認してください(watch / youtu.be / shorts に対応)"); return; }
-    if (!title.trim()) { setErr("タイトルを入力してください"); return; }
+    if (title.trim().length < MIN_LEN) {
+      setErr(`タイトルは${MIN_LEN}文字以上で入力してください(現在 ${title.trim().length} 文字)`); return;
+    }
+    if (memo.trim().length < MIN_LEN) {
+      setErr(`メモは${MIN_LEN}文字以上で入力してください(現在 ${memo.trim().length} 文字)`); return;
+    }
     const start = startStr ? parseTimeInput(startStr) : parsed.start || 0;
     const end = endStr ? parseTimeInput(endStr) : null;
     const payload = {
@@ -248,7 +267,10 @@ function VideoForm({ mode, initial, onSubmit, onClose, phases, systems, onAddPha
         </label>
 
         <label className="field">
-          <span className="field-label">タイトル</span>
+          <span className="field-label">
+            タイトル（{MIN_LEN}文字以上）
+            <CharCount value={title} />
+          </span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例: 5:1に対するポスト連動" />
         </label>
 
@@ -292,7 +314,10 @@ function VideoForm({ mode, initial, onSubmit, onClose, phases, systems, onAddPha
         </label>
 
         <label className="field">
-          <span className="field-label">メモ (任意)</span>
+          <span className="field-label">
+            メモ・説明（{MIN_LEN}文字以上）
+            <CharCount value={memo} />
+          </span>
           <textarea value={memo} onChange={(e) => setMemo(e.target.value)} rows={2} placeholder="注目ポイント、練習への落とし込みなど" />
         </label>
 

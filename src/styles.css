@@ -454,3 +454,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   transition: background-color 0.15s, border-color 0.15s;
 }
 .more-btn:hover { border-color: var(--goal-orange); background: rgba(232, 98, 44, 0.12); }
+
+/* 入力欄の残り文字数表示 */
+.char-count { margin-left: 8px; font-size: 0.72rem; font-weight: 700; color: var(--goal-orange); }
+.char-count.ok { color: var(--line-dim); font-weight: 400; }

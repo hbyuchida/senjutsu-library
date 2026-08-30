@@ -45,6 +45,13 @@ export async function onRequestPost(context) {
   if (!title) return json({ error: "タイトルは必須です" }, 400);
 
   const status = b.status === "draft" ? "draft" : "published";
+  // 公開する記事はタイトルと要約の文字数を必須にする(下書きは書きかけを許す)
+  if (status === "published") {
+    if (title.length < 10) return json({ error: "タイトルは10文字以上で入力してください" }, 400);
+    const ex = (b.excerpt || "").toString().trim();
+    if (ex.length < 10) return json({ error: "要約・説明は10文字以上で入力してください" }, 400);
+  }
+
   const url = (b.url || "").toString().trim().slice(0, 2000);
   // 下書きは書きかけで保存できるようにし、公開するときだけURLを必須にする
   if (type === "link" && status !== "draft" && !/^https?:\/\//i.test(url)) {

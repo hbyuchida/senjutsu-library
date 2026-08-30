@@ -12,6 +12,20 @@ function fmtDate(ms) {
   }
 }
 
+// タイトルと要約の最低文字数(動画フォームと合わせる)
+const MIN_LEN = 10;
+
+// 入力中に「あと何文字か」が分かるようにする
+function CharCount({ value }) {
+  const n = (value || "").trim().length;
+  const ok = n >= MIN_LEN;
+  return (
+    <span className={`char-count ${ok ? "ok" : ""}`}>
+      {ok ? `${n}文字` : `あと${MIN_LEN - n}文字`}
+    </span>
+  );
+}
+
 function ArticleCard({ a, isAdmin, onEdit, onDelete }) {
   const inner = (
     <>
@@ -82,6 +96,15 @@ function ArticleForm({ initial, onSubmit, onClose }) {
   // status: "draft"(下書き保存) または "published"(公開)
   const submit = async (status) => {
     if (!title.trim()) { setErr("タイトルを入力してください"); return; }
+    // 下書きは書きかけで保存できるようにし、公開するときだけ文字数を必須にする
+    if (status === "published") {
+      if (title.trim().length < MIN_LEN) {
+        setErr(`タイトルは${MIN_LEN}文字以上で入力してください(現在 ${title.trim().length} 文字)`); return;
+      }
+      if (excerpt.trim().length < MIN_LEN) {
+        setErr(`要約・説明は${MIN_LEN}文字以上で入力してください(現在 ${excerpt.trim().length} 文字)`); return;
+      }
+    }
     // 下書きは書きかけで保存できるよう、URLの必須チェックは公開時だけ行う
     if (status === "published" && mode === "link" && !/^https?:\/\//i.test(url)) {
       setErr("http(s)から始まるURLを入力してください"); return;
@@ -128,7 +151,10 @@ function ArticleForm({ initial, onSubmit, onClose }) {
         )}
 
         <label className="field">
-          <span className="field-label">タイトル</span>
+          <span className="field-label">
+            タイトル（{MIN_LEN}文字以上）
+            <CharCount value={title} />
+          </span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="例: 6:0ディフェンスの崩し方" />
         </label>
 
@@ -145,7 +171,10 @@ function ArticleForm({ initial, onSubmit, onClose }) {
         )}
 
         <label className="field">
-          <span className="field-label">要約・ひとこと(任意)</span>
+          <span className="field-label">
+            要約・説明（{MIN_LEN}文字以上）
+            <CharCount value={excerpt} />
+          </span>
           <textarea value={excerpt} onChange={(e) => setExcerpt(e.target.value)} rows={2} placeholder="一覧に表示される短い説明" />
         </label>
 

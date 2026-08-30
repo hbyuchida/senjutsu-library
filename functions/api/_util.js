@@ -45,11 +45,17 @@ export async function upsertTaxonomy(env, { phase, systems, tags }) {
 }
 
 // 追加/編集の入力を検証して正規化。問題があれば {error} を返す。
+// タイトル・メモの最低文字数(画面側の MIN_LEN と合わせる)
+const MIN_LEN = 10;
+
 export function validateVideoInput(b) {
   const videoId = (b.videoId || "").toString().trim();
   const title = (b.title || "").toString().trim();
+  const memo = (b.memo || "").toString().trim();
   if (!/^[\w-]{11}$/.test(videoId)) return { error: "YouTube動画IDが不正です" };
-  if (!title) return { error: "タイトルは必須です" };
+  // 画面だけでなくAPI側でも文字数を確認する(動画の追加は誰でもできるため)
+  if (title.length < MIN_LEN) return { error: `タイトルは${MIN_LEN}文字以上で入力してください` };
+  if (memo.length < MIN_LEN) return { error: `メモは${MIN_LEN}文字以上で入力してください` };
   const clampInt = (v, def) => {
     const n = Math.floor(Number(v));
     return Number.isFinite(n) && n >= 0 ? n : def;
@@ -60,7 +66,7 @@ export function validateVideoInput(b) {
     value: {
       videoId,
       title: title.slice(0, 200),
-      memo: (b.memo || "").toString().slice(0, 1000),
+      memo: memo.slice(0, 1000),
       phase: (b.phase || "").toString().slice(0, 60),
       systems: JSON.stringify(systems),
       tags: JSON.stringify(tags),
