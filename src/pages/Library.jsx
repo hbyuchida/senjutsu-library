@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { parseYouTube, parseTimeInput, fmt } from "../lib/utils";
 import { api } from "../lib/api";
-import { NineMeterArc, Chip, AddChip, AdSlot, TabNav } from "../components/shared";
+import { NineMeterArc, Chip, AddChip, AdSlot, TabNav, SponsorBanner } from "../components/shared";
 
 // YouTube IFrame Player API を一度だけ読み込む(連続再生で終了を検知するため)
 let ytPromise = null;
@@ -712,7 +712,7 @@ export default function Library() {
         <p className="site-sub">YouTubeの戦術動画を、局面・システム・タグで整理して見返す。</p>
       </header>
 
-      <div className="container ad-wrap"><AdSlot variant="banner" /></div>
+      <div className="container ad-wrap"><SponsorBanner /></div>
 
       <section className="container filters">
         {/* 絞り込みタブ。項目が増えても1行に収まるよう、選んだ種別のチップだけを出す */}
@@ -735,7 +735,8 @@ export default function Library() {
         <div className="filter-row">
           <div className="chip-scroll">
             {tabItems.length === 0 ? (
-              <span className="filter-empty">この分類はまだありません</span>
+              // 読み込み中に「まだありません」と出ると誤解を招くため文言を分ける
+              <span className="filter-empty">{loading ? "読み込み中…" : "この分類はまだありません"}</span>
             ) : filterTab === "phase" ? (
               tabItems.map((p) => (
                 <Chip key={p} label={p} active={selPhases.includes(p)} onClick={() => toggle(setSelPhases)(p)} tone="orange" />

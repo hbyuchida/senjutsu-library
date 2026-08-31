@@ -18,6 +18,31 @@ export function TabNav() {
   );
 }
 
+// スポンサーバナー(ヘッダー下)。
+// リンク先が決まったら SPONSOR_URL にURLを入れると、クリックで開くようになる。
+const SPONSOR_URL = "";
+
+export function SponsorBanner() {
+  const img = (
+    <img
+      className="sponsor-img"
+      src="/sponsor-handball-next.webp"
+      alt="スポンサー 株式会社ハンドボールネクスト"
+      width="1200"
+      height="312"
+    />
+  );
+  return (
+    <div className="sponsor-banner">
+      {SPONSOR_URL ? (
+        <a href={SPONSOR_URL} target="_blank" rel="noopener noreferrer sponsored">{img}</a>
+      ) : (
+        img
+      )}
+    </div>
+  );
+}
+
 // 9mライン(破線アーク)モチーフ
 export function NineMeterArc({ width = 220, color = "rgba(242,238,230,0.55)" }) {
   return (

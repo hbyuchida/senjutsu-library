@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
-import { NineMeterArc, AdSlot, TabNav } from "../components/shared";
+import { NineMeterArc, AdSlot, TabNav, SponsorBanner } from "../components/shared";
 
 function fmtDate(ms) {
   try {
@@ -263,7 +263,7 @@ export default function Articles() {
         <p className="site-sub">戦術の解説記事や、参考になる記事リンクをまとめる。</p>
       </header>
 
-      <div className="container ad-wrap"><AdSlot variant="banner" /></div>
+      <div className="container ad-wrap"><SponsorBanner /></div>
 
       {isAdmin && (
         <div className="container art-toolbar">
