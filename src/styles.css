@@ -460,5 +460,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .char-count.ok { color: var(--line-dim); font-weight: 400; }
 
 /* ===== スポンサーバナー(ヘッダー下) ===== */
-.sponsor-banner { display: block; }
-.sponsor-img { display: block; width: 100%; height: auto; max-width: 100%; }
+/* PCでは横いっぱいだと大きすぎるため上限を設けて中央に置く。
+   スマホは画面幅がこれより狭いので、これまでどおり幅いっぱいで表示される。 */
+.sponsor-banner { display: block; max-width: 520px; margin: 0 auto; }
+.sponsor-img { display: block; width: 100%; height: auto; }
+.sponsor-banner a { display: block; }

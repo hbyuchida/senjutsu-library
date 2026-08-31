@@ -20,7 +20,7 @@ export function TabNav() {
 
 // スポンサーバナー(ヘッダー下)。
 // リンク先が決まったら SPONSOR_URL にURLを入れると、クリックで開くようになる。
-const SPONSOR_URL = "";
+const SPONSOR_URL = "https://note.com/handball_family";
 
 export function SponsorBanner() {
   const img = (
