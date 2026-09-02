@@ -476,8 +476,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .sponsor-img { display: block; width: 100%; height: auto; }
 .sponsor-banner a { display: block; }
 
-/* ===== 共有ボタン ===== */
-.share-wrap { position: relative; display: inline-flex; align-items: center; }
+/* ===== 共有ボタン・共有シート ===== */
 .share-btn {
   border-radius: 9999px; padding: 6px 16px; font-size: 0.875rem; font-weight: 700;
   border: 1.5px solid var(--line-faint); color: var(--line); flex-shrink: 0;
@@ -485,12 +484,36 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 .share-btn:hover { border-color: var(--goal-orange); background: rgba(232, 98, 44, 0.12); }
 .share-btn.primary { background: var(--goal-orange); border-color: var(--goal-orange); color: #fff; }
-.share-toast {
-  position: absolute; top: calc(100% + 6px); right: 0; white-space: nowrap; z-index: 5;
-  border-radius: 8px; padding: 5px 10px; font-size: 0.75rem; font-weight: 700;
-  background: var(--line); color: var(--court-deep);
-}
 .player-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* 再生モーダル(overflow:hidden)の中からでも切れないよう、画面に固定して出す */
+.share-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: rgba(7, 18, 32, 0.8);
+}
+.share-sheet {
+  width: 100%; max-width: 340px; border-radius: 14px; padding: 16px;
+  background: var(--card); border: 1px solid rgba(242, 238, 230, 0.15);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.share-sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.share-sheet-title { font-size: 1rem; font-weight: 900; }
+.share-close { color: var(--line-dim); font-size: 0.9rem; padding: 2px 6px; }
+.share-item {
+  display: block; width: 100%; text-align: center; text-decoration: none;
+  border-radius: 9999px; padding: 11px 16px; font-size: 0.9rem; font-weight: 700;
+  border: 1.5px solid var(--line-faint); color: var(--line);
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.share-item:hover { border-color: var(--goal-orange); background: rgba(232, 98, 44, 0.12); }
+.share-item.x { background: #000; border-color: #000; color: #fff; }
+.share-item.line { background: #06C755; border-color: #06C755; color: #fff; }
+.share-note { font-size: 0.72rem; line-height: 1.6; color: var(--line-dim); margin-top: -2px; }
+.share-done { font-size: 0.8rem; font-weight: 700; text-align: center; color: var(--goal-orange); }
+.share-fallback input {
+  width: 100%; font-size: 0.75rem; padding: 6px 8px; border-radius: 6px;
+  background: var(--court-deep); border: 1px solid var(--line-faint); color: var(--line);
+}
 
 /* ===== 動画ページ(共有リンクの受け皿) ===== */
 .video-page { max-width: 860px; }

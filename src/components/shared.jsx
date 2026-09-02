@@ -42,47 +42,105 @@ async function copyText(text) {
   }
 }
 
-// 共有ボタン。
-// スマホは標準の共有メニュー(LINE・Instagram等が並ぶ)を開き、
-// 対応していないPCではURLをコピーする。
+// 共有ボタン。押すと共有先を選ぶシートを開く。
+//
+// X と LINE は共有用URLがあるので直接その画面を開ける。
+// Instagram はリンク共有用のURLが提供されていないため、
+// 「コピーしてストーリーやDMに貼る」形にしている(仕様上これが唯一の方法)。
+//
+// シートは画面中央に固定表示する。再生モーダルは overflow:hidden なので、
+// 内側に出すとメニューが切れてしまうため。
+const shareTargets = (url, text) => [
+  {
+    key: "x",
+    label: "𝕏 でポスト",
+    href: `https://x.com/intent/post?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+  },
+  {
+    key: "line",
+    label: "LINEで送る",
+    href: `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+  },
+];
+
 export function ShareButton({ url, title, text, label = "共有", className = "share-btn" }) {
+  const [open, setOpen] = useState(false);
   const [done, setDone] = useState("");
   const [shown, setShown] = useState("");
 
-  const share = async () => {
-    const shareUrl = url || window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, text, url: shareUrl });
-        return;
-      } catch (e) {
-        // 利用者が閉じただけの場合は何もしない
-        if (e && e.name === "AbortError") return;
-        // 共有が使えなかったときはコピーに切り替える
-      }
-    }
+  const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "");
+  const shareText = text || title || "";
+
+  const copy = async () => {
     if (await copyText(shareUrl)) {
-      setDone("リンクをコピーしました");
-      setTimeout(() => setDone(""), 2000);
+      setDone("コピーしました");
+      setTimeout(() => { setDone(""); setOpen(false); }, 1400);
     } else {
-      // コピーもできない環境では、URLを表示して手で選べるようにする
-      setShown(shareUrl);
+      setShown(shareUrl); // コピーできない環境では手で選べるようにする
     }
   };
 
+  const nativeShare = async () => {
+    try {
+      await navigator.share({ title, text: shareText, url: shareUrl });
+      setOpen(false);
+    } catch (e) {
+      if (!e || e.name !== "AbortError") copy();
+    }
+  };
+
+  const close = () => { setOpen(false); setDone(""); setShown(""); };
+
   return (
-    <span className="share-wrap">
-      <button className={className} onClick={share} aria-label="この動画を共有">
+    <>
+      <button className={className} onClick={() => setOpen(true)} aria-label="共有する">
         {label}
       </button>
-      {done && <span className="share-toast">{done}</span>}
-      {shown && (
-        <span className="share-fallback">
-          <input readOnly value={shown} onFocus={(e) => e.target.select()} />
-          <button className="share-close" onClick={() => setShown("")} aria-label="閉じる">✕</button>
-        </span>
+
+      {open && (
+        <div className="share-sheet-backdrop" onClick={close}>
+          <div className="share-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="share-sheet-head">
+              <h3 className="share-sheet-title">共有する</h3>
+              <button className="share-close" onClick={close} aria-label="閉じる">✕</button>
+            </div>
+
+            {shareTargets(shareUrl, shareText).map((t) => (
+              <a
+                key={t.key}
+                className={`share-item ${t.key}`}
+                href={t.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={close}
+              >
+                {t.label}
+              </a>
+            ))}
+
+            <button className="share-item copy" onClick={copy}>
+              📋 リンクをコピー
+            </button>
+            <p className="share-note">
+              Instagramはリンクを直接送る仕組みがないため、コピーしてストーリーやDMに貼り付けてください。
+            </p>
+
+            {typeof navigator !== "undefined" && navigator.share && (
+              <button className="share-item other" onClick={nativeShare}>
+                📱 その他のアプリで共有
+              </button>
+            )}
+
+            {done && <p className="share-done">{done}</p>}
+            {shown && (
+              <div className="share-fallback">
+                <input readOnly value={shown} onFocus={(e) => e.target.select()} />
+              </div>
+            )}
+          </div>
+        </div>
       )}
-    </span>
+    </>
   );
 }
 
