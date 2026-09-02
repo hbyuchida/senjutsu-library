@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 // ライブラリ / ショート(自動再生)を切り替えるタブ
 export function TabNav() {
@@ -233,20 +233,21 @@ export function AddChip({ onAdd, placeholder }) {
 // このコンポーネントの中身を <ins class="adsbygoogle"> ユニットに差し替える。
 // public/ads.txt の更新も忘れずに。
 // =====================================================================
-export function AdSlot({ variant = "banner", label = "スポンサー" }) {
+export function AdSlot({ variant = "banner" }) {
   if (variant === "card") {
     return (
-      <div className="ad-slot card-ad">
-        <span className="ad-tag">AD</span>
-        <p>{label}枠(300×250 など)</p>
-        <p className="ad-note">AdSense導入時にこのカードを広告ユニットに差し替え</p>
-      </div>
+      <Link className="ad-slot card-ad" to="/sponsor">
+        <span className="ad-tag">SPONSOR</span>
+        <p className="ad-lead">スポンサーバナー募集中</p>
+        <p className="ad-note">この枠にバナーを掲載しませんか？ ＞ 詳しく見る</p>
+      </Link>
     );
   }
   return (
-    <div className="ad-slot">
-      <span className="ad-tag">AD</span>
-      <p>{label}バナー枠(レスポンシブ 320×50〜728×90)</p>
-    </div>
+    <Link className="ad-slot" to="/sponsor">
+      <span className="ad-tag">SPONSOR</span>
+      <span className="ad-lead">スポンサーバナー募集中</span>
+      <span className="ad-note">この枠にバナーを掲載しませんか？ ＞ 詳しく見る</span>
+    </Link>
   );
 }

@@ -536,3 +536,31 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   background: var(--court-deep); border: 1px solid var(--line-faint); color: var(--line);
 }
 .share-close { color: var(--line-dim); font-size: 0.8rem; padding: 0 4px; }
+
+/* ===== スポンサー募集バナー(広告枠) ===== */
+/* 元は「AD」の仮枠。募集の導線にするため押せるリンクにして色味も少し起こす */
+.ad-slot { text-decoration: none; flex-wrap: wrap; transition: border-color 0.15s, background-color 0.15s, color 0.15s; }
+.ad-slot:hover { border-color: var(--goal-orange); background: rgba(232, 98, 44, 0.08); color: var(--line); }
+.ad-lead { font-weight: 700; color: var(--line); font-size: 0.9rem; }
+.ad-slot .ad-note { color: var(--line-dim); }
+
+/* ===== スポンサー募集ページ ===== */
+.sponsor-page { max-width: 760px; }
+.sp-lead p { margin-bottom: 12px; }
+.sp-lead strong { color: var(--line); }
+.sp-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 24px 0 8px; }
+@media (min-width: 640px) { .sp-stats { grid-template-columns: repeat(4, 1fr); } }
+.sp-stat {
+  border-radius: 12px; padding: 14px 10px; text-align: center;
+  background: var(--card); border: 1px solid rgba(242, 238, 230, 0.12);
+}
+.sp-num { display: block; font-size: 1.6rem; font-weight: 900; color: var(--goal-orange); line-height: 1.2; }
+.sp-label { display: block; font-size: 0.75rem; color: var(--line-dim); margin-top: 4px; }
+.sp-example { margin: 12px 0 8px; }
+/* 運営者が埋める箇所。未記入のまま公開しないよう目立たせる */
+.sp-todo {
+  border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; font-weight: 700;
+  border: 1px dashed var(--goal-orange); color: var(--goal-orange);
+}
+.sp-back { margin-top: 28px; font-size: 0.9rem; }
+.sp-back a { color: var(--goal-orange); text-decoration: none; }

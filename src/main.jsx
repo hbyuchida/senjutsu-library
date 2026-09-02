@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Library from "./pages/Library";
 import Shorts from "./pages/Shorts";
 import Video from "./pages/Video";
+import Sponsor from "./pages/Sponsor";
 import Articles from "./pages/Articles";
 import Article from "./pages/Article";
 import Privacy from "./pages/Privacy";
@@ -21,6 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/article/:id" element={<Article />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/about" element={<About />} />
+        <Route path="/sponsor" element={<Sponsor />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
