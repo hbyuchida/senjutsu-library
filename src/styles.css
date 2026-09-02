@@ -475,3 +475,41 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .sponsor-banner { display: block; max-width: 520px; margin: 0 auto; }
 .sponsor-img { display: block; width: 100%; height: auto; }
 .sponsor-banner a { display: block; }
+
+/* ===== 共有ボタン ===== */
+.share-wrap { position: relative; display: inline-flex; align-items: center; }
+.share-btn {
+  border-radius: 9999px; padding: 6px 16px; font-size: 0.875rem; font-weight: 700;
+  border: 1.5px solid var(--line-faint); color: var(--line); flex-shrink: 0;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.share-btn:hover { border-color: var(--goal-orange); background: rgba(232, 98, 44, 0.12); }
+.share-btn.primary { background: var(--goal-orange); border-color: var(--goal-orange); color: #fff; }
+.share-toast {
+  position: absolute; top: calc(100% + 6px); right: 0; white-space: nowrap; z-index: 5;
+  border-radius: 8px; padding: 5px 10px; font-size: 0.75rem; font-weight: 700;
+  background: var(--line); color: var(--court-deep);
+}
+.player-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ===== 動画ページ(共有リンクの受け皿) ===== */
+.video-page { max-width: 860px; }
+.video-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; background: #000; margin-bottom: 14px; }
+.video-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.video-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.video-title { font-size: 1.3rem; font-weight: 900; line-height: 1.4; }
+.video-memo { font-size: 0.95rem; line-height: 1.8; color: var(--line-dim); margin-top: 12px; }
+.time-badge.plain { position: static; display: inline-block; }
+.video-page .video-card { text-decoration: none; color: var(--line); }
+.video-page .video-card .thumb-btn { display: block; }
+.video-page .video-card .card-body { display: block; padding: 12px 14px; }
+/* コピーもできない環境で、URLを手で選べるようにする */
+.share-fallback {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 6; display: flex; gap: 4px;
+  background: var(--card); border: 1px solid var(--line-faint); border-radius: 8px; padding: 6px;
+}
+.share-fallback input {
+  width: 230px; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px;
+  background: var(--court-deep); border: 1px solid var(--line-faint); color: var(--line);
+}
+.share-close { color: var(--line-dim); font-size: 0.8rem; padding: 0 4px; }

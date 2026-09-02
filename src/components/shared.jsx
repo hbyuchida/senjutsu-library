@@ -18,6 +18,74 @@ export function TabNav() {
   );
 }
 
+// クリップボードへコピー。新しいAPIが使えない/拒否される環境があるため、
+// 古い execCommand も試す。どちらも駄目なら false を返す。
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    /* 次の方法を試す */
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+// 共有ボタン。
+// スマホは標準の共有メニュー(LINE・Instagram等が並ぶ)を開き、
+// 対応していないPCではURLをコピーする。
+export function ShareButton({ url, title, text, label = "共有", className = "share-btn" }) {
+  const [done, setDone] = useState("");
+  const [shown, setShown] = useState("");
+
+  const share = async () => {
+    const shareUrl = url || window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title, text, url: shareUrl });
+        return;
+      } catch (e) {
+        // 利用者が閉じただけの場合は何もしない
+        if (e && e.name === "AbortError") return;
+        // 共有が使えなかったときはコピーに切り替える
+      }
+    }
+    if (await copyText(shareUrl)) {
+      setDone("リンクをコピーしました");
+      setTimeout(() => setDone(""), 2000);
+    } else {
+      // コピーもできない環境では、URLを表示して手で選べるようにする
+      setShown(shareUrl);
+    }
+  };
+
+  return (
+    <span className="share-wrap">
+      <button className={className} onClick={share} aria-label="この動画を共有">
+        {label}
+      </button>
+      {done && <span className="share-toast">{done}</span>}
+      {shown && (
+        <span className="share-fallback">
+          <input readOnly value={shown} onFocus={(e) => e.target.select()} />
+          <button className="share-close" onClick={() => setShown("")} aria-label="閉じる">✕</button>
+        </span>
+      )}
+    </span>
+  );
+}
+
 // スポンサーバナー(ヘッダー下)。
 // リンク先が決まったら SPONSOR_URL にURLを入れると、クリックで開くようになる。
 const SPONSOR_URL = "https://note.com/handball_family";

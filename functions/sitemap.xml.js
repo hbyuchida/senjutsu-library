@@ -49,6 +49,17 @@ export async function onRequestGet({ env }) {
     // DBが読めなくても固定ページ分のサイトマップは返す
   }
 
+  try {
+    const { results } = await env.DB.prepare(
+      "SELECT id, created_at FROM videos ORDER BY created_at DESC LIMIT 2000"
+    ).all();
+    for (const v of results || []) {
+      urls.push({ loc: `/video/${v.id}`, lastmod: iso(v.created_at), changefreq: "monthly", priority: "0.6" });
+    }
+  } catch {
+    /* 動画が読めなくても続行 */
+  }
+
   const body =
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +

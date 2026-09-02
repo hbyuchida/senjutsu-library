@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { parseYouTube, parseTimeInput, fmt } from "../lib/utils";
 import { api } from "../lib/api";
-import { NineMeterArc, Chip, AddChip, AdSlot, TabNav, SponsorBanner } from "../components/shared";
+import { NineMeterArc, Chip, AddChip, AdSlot, TabNav, SponsorBanner, ShareButton } from "../components/shared";
 
 // YouTube IFrame Player API を一度だけ読み込む(連続再生で終了を検知するため)
 let ytPromise = null;
@@ -163,7 +163,15 @@ function PlayerModal({ queue, index, onIndex, autoplay, setAutoplay, onCount, on
               <h3 className="player-title">{v.title}</h3>
               {v.memo && <p className="player-memo">{v.memo}</p>}
             </div>
-            <button className="close-btn" onClick={onClose}>閉じる</button>
+            <div className="player-actions">
+              <ShareButton
+                url={`${location.origin}/video/${v.id}`}
+                title={v.title}
+                text={`${v.title}｜戦術ライブラリ`}
+                label="🔗 共有"
+              />
+              <button className="close-btn" onClick={onClose}>閉じる</button>
+            </div>
           </div>
           <div className="player-controls">
             <button className="pc-btn" disabled={index === 0} onClick={() => onIndex(index - 1)}>← 前へ</button>

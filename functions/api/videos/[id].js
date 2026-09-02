@@ -1,7 +1,16 @@
+// GET    /api/videos/:id … 単体取得(公開。動画ごとのページと共有で使う)
 // PUT    /api/videos/:id … 編集(管理者のみ)
 // DELETE /api/videos/:id … 削除(管理者のみ)
 import { json, rowToVideo, validateVideoInput, upsertTaxonomy } from "../_util.js";
 import { isAdmin } from "../_auth.js";
+
+export async function onRequestGet({ env, params }) {
+  const id = parseInt(params.id, 10);
+  if (!Number.isInteger(id)) return json({ error: "IDが不正です" }, 400);
+  const row = await env.DB.prepare("SELECT * FROM videos WHERE id=?").bind(id).first();
+  if (!row) return json({ error: "動画が見つかりません" }, 404);
+  return json({ video: rowToVideo(row) });
+}
 
 export async function onRequestPut(context) {
   const { env, request, params } = context;

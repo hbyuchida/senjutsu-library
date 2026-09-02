@@ -163,7 +163,7 @@ const isoDuration = (sec) => {
   return `PT${Math.floor(s / 60)}M${s % 60}S`;
 };
 
-async function jsonLd(env, { path, origin, canonical, meta, article }) {
+async function jsonLd(env, { path, origin, canonical, meta, article, video }) {
   const crumbs = (items) => ({
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -174,6 +174,30 @@ async function jsonLd(env, { path, origin, canonical, meta, article }) {
       item: origin + it.path,
     })),
   });
+
+  // 動画ページ: VideoObject + パンくず(検索結果にサムネイル付きで出る可能性を高める)
+  if (video) {
+    const end = video.end_sec == null || video.end_sec === "null" ? null : Number(video.end_sec);
+    const len = end != null ? end - (Number(video.start) || 0) : null;
+    let out = jsonScript({
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      name: String(video.title || "").slice(0, 110),
+      description: meta.description,
+      thumbnailUrl: [ytThumb(video.video_id)],
+      uploadDate: video.created_at ? new Date(Number(video.created_at)).toISOString() : undefined,
+      duration: len && len > 0 ? isoDuration(len) : undefined,
+      embedUrl: `https://www.youtube.com/embed/${video.video_id}`,
+      contentUrl: ytWatch(video.video_id, Number(video.start) || 0),
+    });
+    out += jsonScript(
+      crumbs([
+        { name: "ホーム", path: "/" },
+        { name: video.title, path: `/video/${video.id}` },
+      ])
+    );
+    return out;
+  }
 
   // 記事ページ: Article + パンくず(下書きと外部リンク記事は出さない)
   if (article) {
@@ -300,6 +324,20 @@ export async function onRequest(context) {
   const path = url.pathname.replace(/\/+$/, "") || "/";
   const origin = context.env.SITE_ORIGIN || DEFAULT_ORIGIN;
 
+  // 動画ページ(/video/123)。共有されたリンクがサムネイル付きで表示されるよう、
+  // YouTubeのサムネイルを og:image に指定する。
+  const videoId = path.match(/^\/video\/(\d+)$/)?.[1];
+  let video = null;
+  if (videoId) {
+    try {
+      video = await context.env.DB.prepare(
+        "SELECT id,video_id,title,memo,phase,systems,tags,start,end_sec,created_at FROM videos WHERE id=?"
+      ).bind(videoId).first();
+    } catch {
+      /* 取れなければ既定のメタ情報のまま */
+    }
+  }
+
   // 記事詳細(/article/123)は記事ごとに内容が違うので、DBを見てメタ情報を組み立てる
   const articleId = path.match(/^\/article\/(\d+)$/)?.[1];
   let article = null;
@@ -321,12 +359,23 @@ export async function onRequest(context) {
         description:
           article.excerpt || excerptFrom(article.body) || metaFor("/articles").description,
       }
+    : video
+    ? {
+        title: `${video.title} | ${SITE_NAME}`,
+        description:
+          video.memo ||
+          `ハンドボールの戦術動画「${video.title}」。${SITE_NAME}では局面・システム・タグで動画を整理しています。`,
+      }
     : metaFor(path);
   const canonical = origin + (path === "/" ? "/" : path);
 
   // 記事は og:type を article にし、アイキャッチがあればそれを使う
-  const ogType = article && article.type === "post" ? "article" : "website";
-  const ogImage = article && article.image ? article.image : origin + OG_IMAGE;
+  const ogType = video ? "video.other" : article && article.type === "post" ? "article" : "website";
+  const ogImage = video
+    ? ytThumb(video.video_id)
+    : article && article.image
+    ? article.image
+    : origin + OG_IMAGE;
 
   // 検索結果に出したくないページ:
   //  ・外部リンクを紹介するだけの記事(このサイト側に独自の本文が無い)
@@ -345,7 +394,7 @@ export async function onRequest(context) {
     <meta property="og:url" content="${esc(canonical)}" />
     <meta property="og:image" content="${esc(ogImage)}" />
     <meta property="og:locale" content="ja_JP" />
-    <meta name="twitter:card" content="${article && article.image ? "summary_large_image" : "summary"}" />
+    <meta name="twitter:card" content="${video || (article && article.image) ? "summary_large_image" : "summary"}" />
     <meta name="twitter:title" content="${esc(meta.title)}" />
     <meta name="twitter:description" content="${esc(meta.description)}" />
     <meta name="twitter:image" content="${esc(ogImage)}" />${await jsonLd(context.env, {
@@ -354,6 +403,7 @@ export async function onRequest(context) {
       canonical,
       meta,
       article,
+      video,
     })}`;
 
   // 中身のあるページだけ本文を差し込む(規約ページなどは元のままで十分)
@@ -362,6 +412,10 @@ export async function onRequest(context) {
     body = await bodyHtml(context.env, path, meta);
   } else if (path === "/articles") {
     body = await articlesBodyHtml(context.env, meta);
+  } else if (video) {
+    body = `<div id="seo-content"><h1>${esc(video.title)}</h1>${
+      video.memo ? `<p>${esc(video.memo)}</p>` : ""
+    }</div>`;
   } else if (article && article.type === "post") {
     body = `<div id="seo-content"><h1>${esc(article.title)}</h1><p>${esc(
       excerptFrom(article.body, 2000)

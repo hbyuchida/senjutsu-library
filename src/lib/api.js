@@ -22,6 +22,7 @@ async function req(path, options = {}) {
 
 export const api = {
   listVideos: () => req("/api/videos").then((d) => d.videos),
+  getVideo: (id) => req(`/api/videos/${id}`).then((d) => d.video),
   addVideo: (v) => req("/api/videos", { method: "POST", body: JSON.stringify(v) }).then((d) => d.video),
   updateVideo: (id, v) =>
     req(`/api/videos/${id}`, { method: "PUT", body: JSON.stringify(v) }).then((d) => d.video),

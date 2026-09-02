@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { Link } from "react-router-dom";
 import { fmt } from "../lib/utils";
 import { api } from "../lib/api";
-import { TabNav } from "../components/shared";
+import { TabNav, ShareButton } from "../components/shared";
 
 // 8分(480秒)以内の「指定範囲」だけを対象にする。
 // 指定範囲 = start〜end。end 未設定(全編)の動画は長さ不明のため対象外。
@@ -270,6 +270,13 @@ export default function Shorts() {
             <button className="shorts-mute" onClick={toggleMute} aria-label={muted ? "音を出す" : "ミュート"}>
               {muted ? "🔇 ミュート中" : "🔊 音あり"}
             </button>
+            <ShareButton
+              url={`${location.origin}/video/${videos[activeIndex]?.id || ""}`}
+              title={videos[activeIndex]?.title}
+              text={`${videos[activeIndex]?.title || ""}｜戦術ライブラリ`}
+              label="🔗 共有"
+              className="shorts-mute"
+            />
             <button
               className="shorts-mute"
               onClick={toggleFullscreen}
