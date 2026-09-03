@@ -239,7 +239,8 @@ export function AdSlot({ variant = "banner" }) {
       <Link className="ad-slot card-ad" to="/sponsor">
         <span className="ad-tag">SPONSOR</span>
         <p className="ad-lead">スポンサーバナー募集中</p>
-        <p className="ad-note">この枠にバナーを掲載しませんか？ ＞ 詳しく見る</p>
+        <p className="ad-size">300×250 など</p>
+        <p className="ad-note">この枠に掲載しませんか？ ＞ 詳しく見る</p>
       </Link>
     );
   }
@@ -247,7 +248,8 @@ export function AdSlot({ variant = "banner" }) {
     <Link className="ad-slot" to="/sponsor">
       <span className="ad-tag">SPONSOR</span>
       <span className="ad-lead">スポンサーバナー募集中</span>
-      <span className="ad-note">この枠にバナーを掲載しませんか？ ＞ 詳しく見る</span>
+      <span className="ad-size">レスポンシブ 320×50〜728×90</span>
+      <span className="ad-note">この枠に掲載しませんか？ ＞ 詳しく見る</span>
     </Link>
   );
 }

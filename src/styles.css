@@ -564,3 +564,6 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 }
 .sp-back { margin-top: 28px; font-size: 0.9rem; }
 .sp-back a { color: var(--goal-orange); text-decoration: none; }
+/* 募集枠に出す推奨サイズ */
+.ad-size { font-size: 0.75rem; color: var(--line-dim); font-family: "Barlow Condensed", sans-serif; letter-spacing: 0.06em; }
+.sp-size { font-size: 0.78rem; color: var(--goal-orange); font-weight: 700; }

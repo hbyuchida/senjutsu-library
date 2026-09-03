@@ -283,11 +283,21 @@ export default function Articles() {
             <p>まだ記事がありません。{isAdmin ? "「＋ 記事を追加」から、リンクの共有や記事の執筆ができます。" : "管理者が記事を追加すると、ここに並びます。"}</p>
           </div>
         ) : (
-          <div className="art-grid">
-            {articles.map((a) => (
-              <ArticleCard key={a.id} a={a} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />
-            ))}
-          </div>
+          <>
+            <div className="art-grid">
+              {/* 記事が増えたときのために、6件ごとに募集枠を挟む(動画一覧と同じ考え方) */}
+              {articles.flatMap((a, i) => {
+                const items = [
+                  <ArticleCard key={a.id} a={a} isAdmin={isAdmin} onEdit={openEdit} onDelete={handleDelete} />,
+                ];
+                if ((i + 1) % 6 === 0 && i + 1 < articles.length) {
+                  items.push(<AdSlot key={`ad-${a.id}`} variant="card" />);
+                }
+                return items;
+              })}
+            </div>
+            <div className="ad-wrap"><AdSlot variant="banner" /></div>
+          </>
         )}
       </main>
 

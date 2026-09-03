@@ -65,12 +65,26 @@ export default function Sponsor() {
         <p>ヘッダー直下に、下記のようなバナーを掲載します（現在のスポンサー様の実例です）。</p>
         <div className="sp-example"><SponsorBanner /></div>
 
-        <h2>掲載場所</h2>
+        <h2>掲載場所とバナーサイズ</h2>
         <ul>
-          <li><strong>ヘッダー直下バナー</strong>…ライブラリ・記事ページの最上部。最も目に入る位置です。</li>
-          <li><strong>一覧内バナー</strong>…動画一覧の途中に挟み込む形で表示されます。</li>
-          <li><strong>再生画面バナー</strong>…動画を再生した画面の下部に表示されます。</li>
+          <li>
+            <strong>ヘッダー直下バナー</strong>…ライブラリ・記事ページの最上部。最も目に入る位置です。<br />
+            <span className="sp-size">推奨サイズ 1200×312px（横長・比率およそ3.8:1）／PNG・WebP</span>
+          </li>
+          <li>
+            <strong>一覧内バナー</strong>…動画一覧の途中に挟み込む形で表示されます。<br />
+            <span className="sp-size">レスポンシブ 320×50〜728×90px</span>
+          </li>
+          <li>
+            <strong>カード枠</strong>…動画カードと同じ大きさで一覧に並びます。<br />
+            <span className="sp-size">300×250px など</span>
+          </li>
+          <li>
+            <strong>再生画面バナー</strong>…動画を再生した画面の下部に表示されます。<br />
+            <span className="sp-size">レスポンシブ 320×50〜728×90px</span>
+          </li>
         </ul>
+        <p>バナーの制作が難しい場合は、ロゴをお預かりしてこちらで作成することもできます。</p>
 
         <h2>ご支援いただけると</h2>
         <ul>
