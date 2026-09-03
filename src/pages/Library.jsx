@@ -22,6 +22,9 @@ function loadYT() {
   return ytPromise;
 }
 
+// サービス紹介LP(別サイト)
+const LP_URL = "https://senjutsu-library-redesign.hb-yuchida.chatgpt.site";
+
 // タイトルとメモの最低文字数(内容が分かる説明を必ず入れてもらうため)
 const MIN_LEN = 10;
 
@@ -864,7 +867,8 @@ export default function Library() {
       <footer className="container site-footer">
         <AdSlot variant="banner" />
         <nav className="footer-links">
-          <Link to="/guide">戦術ライブラリとは</Link>
+          {/* サービス紹介LPは別サイトで用意しているのでそちらへ送る */}
+          <a href={LP_URL} target="_blank" rel="noopener noreferrer">戦術ライブラリとは</a>
           <Link to="/about">運営者情報・お問い合わせ</Link>
           <Link to="/privacy">プライバシーポリシー</Link>
         </nav>
