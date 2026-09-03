@@ -28,6 +28,7 @@ export async function onRequestGet({ env }) {
     { loc: "/", changefreq: "weekly", priority: "1.0" },
     { loc: "/shorts", changefreq: "weekly", priority: "0.8" },
     { loc: "/articles", changefreq: "weekly", priority: "0.8" },
+    { loc: "/guide", changefreq: "monthly", priority: "0.9" },
     { loc: "/sponsor", changefreq: "monthly", priority: "0.5" },
     { loc: "/about", changefreq: "monthly", priority: "0.3" },
     { loc: "/privacy", changefreq: "yearly", priority: "0.1" },

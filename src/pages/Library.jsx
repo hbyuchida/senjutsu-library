@@ -864,6 +864,7 @@ export default function Library() {
       <footer className="container site-footer">
         <AdSlot variant="banner" />
         <nav className="footer-links">
+          <Link to="/guide">戦術ライブラリとは</Link>
           <Link to="/about">運営者情報・お問い合わせ</Link>
           <Link to="/privacy">プライバシーポリシー</Link>
         </nav>
