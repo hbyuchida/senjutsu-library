@@ -160,6 +160,8 @@ export function SponsorBanner() {
   );
   return (
     <div className="sponsor-banner">
+      {/* 広告であることが分かるよう「PR」を表示する(料金表の掲載条件・ステマ規制対応) */}
+      <span className="sponsor-pr">PR</span>
       {SPONSOR_URL ? (
         <a href={SPONSOR_URL} target="_blank" rel="noopener noreferrer sponsored">{img}</a>
       ) : (

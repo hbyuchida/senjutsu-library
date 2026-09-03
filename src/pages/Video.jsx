@@ -126,6 +126,10 @@ export default function Video() {
           </>
         )}
       </main>
+
+      <footer className="container site-footer">
+        <AdSlot variant="banner" />
+      </footer>
     </>
   );
 }

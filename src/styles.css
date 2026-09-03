@@ -567,3 +567,21 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 /* 募集枠に出す推奨サイズ */
 .ad-size { font-size: 0.75rem; color: var(--line-dim); font-family: "Barlow Condensed", sans-serif; letter-spacing: 0.06em; }
 .sp-size { font-size: 0.78rem; color: var(--goal-orange); font-weight: 700; }
+
+/* スポンサーバナーの「PR」表記(広告であることを明示する) */
+.sponsor-banner { position: relative; }
+.sponsor-pr {
+  position: absolute; top: 6px; left: 6px; z-index: 2;
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em;
+  padding: 1px 6px; border-radius: 4px;
+  background: rgba(13, 36, 64, 0.72); color: rgba(242, 238, 230, 0.9);
+}
+
+/* スポンサー募集ページの料金表 */
+.sp-table-wrap { overflow-x: auto; margin: 12px 0 8px; }
+.sp-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 460px; }
+.sp-table th, .sp-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid rgba(242, 238, 230, 0.15); }
+.sp-table th { font-size: 0.78rem; color: var(--line-dim); font-weight: 700; white-space: nowrap; }
+.sp-table td { color: var(--line); }
+.sp-price { font-weight: 900; color: var(--goal-orange); white-space: nowrap; }
+.sp-contact a { color: var(--goal-orange); }

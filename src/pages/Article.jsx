@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../lib/api";
 import { fmt } from "../lib/utils";
 import { renderMarkdown } from "../lib/markdown";
-import { NineMeterArc, AdSlot, TabNav } from "../components/shared";
+import { NineMeterArc, AdSlot, TabNav, SponsorBanner } from "../components/shared";
 
 function fmtDate(ms) {
   try {
@@ -156,6 +156,7 @@ export default function Article() {
     <>
       <div className="admin-bar container" />
       <div className="container"><TabNav /></div>
+      <div className="container ad-wrap"><SponsorBanner /></div>
 
       <main className="container article-page">
         {loading ? (
@@ -190,6 +191,10 @@ export default function Article() {
           </article>
         )}
       </main>
+
+      <footer className="container site-footer">
+        <AdSlot variant="banner" />
+      </footer>
 
       {playing && <RelatedPlayer v={playing} onClose={() => setPlaying(null)} />}
     </>
