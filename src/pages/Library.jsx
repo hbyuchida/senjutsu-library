@@ -869,6 +869,9 @@ export default function Library() {
         <nav className="footer-links">
           {/* サービス紹介LPは別サイトで用意しているのでそちらへ送る */}
           <a href={LP_URL} target="_blank" rel="noopener noreferrer">戦術ライブラリとは</a>
+          {/* サイト内の紹介ページ。検索から入ってきた人の受け皿なので、
+              孤立させないようここから必ず辿れるようにしておく */}
+          <Link to="/guide">使い方・特徴</Link>
           <Link to="/about">運営者情報・お問い合わせ</Link>
           <Link to="/privacy">プライバシーポリシー</Link>
         </nav>
