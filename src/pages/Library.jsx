@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { parseYouTube, parseTimeInput, fmt } from "../lib/utils";
 import { api } from "../lib/api";
-import { NineMeterArc, Chip, AddChip, AdSlot, TabNav, SponsorBanner, ShareButton } from "../components/shared";
+import { NineMeterArc, Chip, AddChip, AdSlot, TabNav, SponsorBanner, ShareButton, AdSenseUnit } from "../components/shared";
 
 // YouTube IFrame Player API を一度だけ読み込む(連続再生で終了を検知するため)
 let ytPromise = null;
@@ -21,6 +21,9 @@ function loadYT() {
   });
   return ytPromise;
 }
+
+// AdSenseの関連コンテンツ広告(一覧の区切りに置く)
+const ADSENSE_LIST_SLOT = "7682036086";
 
 // サービス紹介LP(別サイト)
 const LP_URL = "https://senjutsu-library-redesign.hb-yuchida.chatgpt.site";
@@ -816,6 +819,7 @@ export default function Library() {
               </div>
             )}
             <MoreButton shown={shownFiltered} total={filtered.length} onMore={setShownFiltered} />
+            <AdSenseUnit slot={ADSENSE_LIST_SLOT} />
           </>
         ) : videos.length === 0 ? (
           <div className="empty-state">
@@ -856,6 +860,7 @@ export default function Library() {
               </div>
               <MoreButton shown={shownAll} total={videos.length} onMore={setShownAll} />
             </section>
+            <AdSenseUnit slot={ADSENSE_LIST_SLOT} />
             <p className="home-hint">
               上の<strong>局面・システム・タグ</strong>で絞り込むと、目的の動画を探しやすくなります。
               短いクリップを次々に見たい方は<Link to="/shorts" className="home-hint-link">ショート ▶</Link>もどうぞ。

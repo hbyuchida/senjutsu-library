@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 
 // ライブラリ / ショート(自動再生)を切り替えるタブ
@@ -226,6 +226,48 @@ export function AddChip({ onAdd, placeholder }) {
       />
       <button className="chip-confirm" onClick={commit}>✓</button>
     </span>
+  );
+}
+
+// =====================================================================
+// AdSense広告ユニット
+//
+// 読み込みスクリプトは index.html の <head> に入っているので、ここでは
+// <ins> を置いて push するだけ。
+// SPAでは再描画で push が重複しやすく、同じ枠に二重で push すると
+// 「already have ads in them」エラーになって広告が出なくなる。
+// そのため「まだ広告が入っていない ins」に対して一度だけ push する。
+// =====================================================================
+const ADSENSE_CLIENT = "ca-pub-7054580763658374";
+
+export function AdSenseUnit({ slot, format = "autorelaxed", label = "広告" }) {
+  const boxRef = useRef(null);
+  const pushed = useRef(false);
+
+  useEffect(() => {
+    if (pushed.current) return;
+    const ins = boxRef.current?.querySelector("ins.adsbygoogle");
+    // data-adsbygoogle-status が付いていれば既に処理済み
+    if (!ins || ins.getAttribute("data-adsbygoogle-status")) return;
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      pushed.current = true;
+    } catch {
+      /* 広告ブロッカー等で失敗しても本体の表示には影響させない */
+    }
+  }, []);
+
+  return (
+    <div className="adsense-unit" ref={boxRef}>
+      <span className="adsense-label">{label}</span>
+      <ins
+        className="adsbygoogle"
+        style={{ display: "block" }}
+        data-ad-format={format}
+        data-ad-client={ADSENSE_CLIENT}
+        data-ad-slot={slot}
+      />
+    </div>
   );
 }
 

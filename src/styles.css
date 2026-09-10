@@ -621,3 +621,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .gd-final h2 { border: 0; margin: 0 0 8px; }
 .gd-final p { color: var(--line-dim); font-size: 0.9rem; margin-bottom: 16px; }
 .gd-final .gd-cta { justify-content: center; }
+
+/* ===== AdSense広告ユニット ===== */
+.adsense-unit { margin: 24px 0 8px; min-height: 1px; }
+.adsense-label {
+  display: block; margin-bottom: 6px;
+  font-size: 0.7rem; letter-spacing: 0.12em; color: var(--line-faint);
+}
