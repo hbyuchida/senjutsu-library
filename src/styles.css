@@ -628,3 +628,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   display: block; margin-bottom: 6px;
   font-size: 0.7rem; letter-spacing: 0.12em; color: var(--line-faint);
 }
+/* 広告が配信されなかったとき、空の枠が一覧の途中に穴として残らないよう畳む。
+   Googleは未配信の枠に data-ad-status="unfilled" を付ける。 */
+.adsense-unit:has(ins[data-ad-status="unfilled"]) { display: none; }
+.adsense-unit ins[data-ad-status="unfilled"] { display: none !important; }
